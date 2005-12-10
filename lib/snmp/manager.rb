@@ -22,18 +22,16 @@ class RequestTimeout < RuntimeError; end
 # using other transport types (e.g. TCP)
 #
 class UDPTransport
-    def initialize(host, port)
+    def initialize
         @socket = UDPSocket.open
-        @host = host
-        @port = port
     end
 
     def close
         @socket.close
     end
 
-    def send(data)
-        @socket.send(data, 0, @host, @port)
+    def send(data, host, port)
+        @socket.send(data, 0, host, port)
     end
 
     def recv(max_bytes)
@@ -125,6 +123,7 @@ class Manager
     DefaultConfig = {
         :Host => 'localhost',
         :Port => 161,
+        :TrapPort => 162,
         :Community => 'public',
         :WriteCommunity => nil,
         :Version => :SNMPv2c,
@@ -153,13 +152,16 @@ class Manager
         end
         @config = DefaultConfig.merge(config)
         @config[:WriteCommunity] = @config[:WriteCommunity] || @config[:Community]
+        @host = @config[:Host]
+        @port = @config[:Port]
+        @trap_port = @config[:TrapPort]
         @community = @config[:Community]
         @write_community = @config[:WriteCommunity]
         @snmp_version = @config[:Version]
-        @max_bytes = @config[:MaxReceiveBytes]
         @timeout = @config[:Timeout]
         @retries = @config[:Retries]
-        @transport = @config[:Transport].new(@config[:Host], @config[:Port])
+        @transport = @config[:Transport].new 
+        @max_bytes = @config[:MaxReceiveBytes]
         @mib = MIB.new
         load_modules(@config[:MibModules], @config[:MibDir])
     end
@@ -265,6 +267,50 @@ class Manager
     end
 
     ##
+    # Sends an SNMPv2c style trap.
+    #
+    # sys_up_time: an integer respresenting the number of hundredths of
+    #              a second that this system has been up
+    #
+    # trap_oid:    an ObjectId or String with the OID identifier for this
+    #              trap
+    #
+    # object_list: a list of additional varbinds to send with the trap 
+    #
+    def trap_v2(sys_up_time, trap_oid, object_list=[])
+        vb_list = create_trap_vb_list(sys_up_time, trap_oid, object_list)
+        trap = SNMPv2_Trap.new(@@request_id.next, vb_list)
+        send_request(trap, @community, @host, @trap_port)
+    end
+                
+    ##
+    # Sends an inform request using the supplied list 
+    #
+    # sys_up_time: an integer respresenting the number of hundredths of
+    #              a second that this system has been up
+    #
+    # trap_oid:    an ObjectId or String with the OID identifier for this
+    #              inform request
+    #
+    # object_list: a list of additional varbinds to send with the inform 
+    #
+    def inform(sys_up_time, trap_oid, object_list=[])
+        vb_list = create_trap_vb_list(sys_up_time, trap_oid, object_list)
+        request = InformRequest.new(@@request_id.next, vb_list)
+        try_request(request, @community, @host, @trap_port)
+    end
+    
+    ##
+    # Helper method for building VarBindList for trap and inform requests.
+    #
+    def create_trap_vb_list(sys_up_time, trap_oid, object_list)
+        vb_args = @mib.varbind_list(object_list, :KeepValue)
+        uptime_vb = VarBind.new(SNMP::SYS_UP_TIME_OID, TimeTicks.new(sys_up_time.to_int))
+        trap_vb = VarBind.new(SNMP::SNMP_TRAP_OID_OID, @mib.oid(trap_oid))
+        VarBindList.new([uptime_vb, trap_vb, *vb_args])
+    end
+    
+    ##
     # Walks a list of ObjectId or VarBind objects using get_next until
     # the response to the first OID in the list reaches the end of its
     # MIB subtree.
@@ -334,10 +380,10 @@ class Manager
         module_list.each { |m| @mib.load_module(m, mib_dir) }
     end
     
-    def try_request(request, community=@community)
-        @retries.times do |n|
+    def try_request(request, community=@community, host=@host, port=@port)
+        (@retries + 1).times do |n|
+            send_request(request, community, host, port)
             begin
-                send_request(request, community)
                 timeout(@timeout) do
                     return get_response(request)
                 end
@@ -350,18 +396,22 @@ class Manager
         raise RequestTimeout, "host #{@config[:Host]} not responding", caller
     end
     
-    def send_request(request, community)
+    def send_request(request, community, host, port)
         message = Message.new(@snmp_version, community, request)
-        @transport.send(message.encode)
+        @transport.send(message.encode, host, port)
     end
     
+    ##
+    # Wait until response arrives.  Ignore responses with mismatched IDs;
+    # these responses are typically from previous requests that timed out
+    # or almost timed out.
+    #
     def get_response(request)
-        data = @transport.recv(@max_bytes)
-        message = Message.decode(data)
-        response = message.pdu
-        if (request.request_id != response.request_id)
-            raise RuntimeError, "Request ID mismatch: expected #{request.request_id}, got #{response.request_id}", caller
-        end
+        begin
+            data = @transport.recv(@max_bytes)
+            message = Message.decode(data)
+            response = message.pdu
+        end until request.request_id == response.request_id
         response
     end
 end

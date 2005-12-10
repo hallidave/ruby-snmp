@@ -163,9 +163,7 @@ class ObjectId < Array
     # ObjectId.  For example, "1.3.6.1.5" is a subtree of "1.3.6.1".
     #
     def subtree_of?(parent_tree)
-        unless parent_tree.kind_of? ObjectId
-            parent_tree = ObjectId.new(parent_tree)
-        end
+        parent_tree = make_object_id(parent_tree)
         if parent_tree.length > self.length
             false
         else
@@ -180,7 +178,12 @@ class ObjectId < Array
     
     def make_integers(list)
         list.collect{|n| Integer(n)}
+    end 
+    
+    def make_object_id(oid)
+        oid.kind_of?(ObjectId) ? oid : ObjectId.new(oid)
     end
+    
 end
 
 class IpAddress

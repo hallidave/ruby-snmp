@@ -23,6 +23,9 @@ class InvalidErrorStatus < RuntimeError; end
 class InvalidTrapVarbind < RuntimeError; end
 class InvalidGenericTrap < RuntimeError; end
 
+SYS_UP_TIME_OID = ObjectId.new("1.3.6.1.2.1.1.3.0")
+SNMP_TRAP_OID_OID = ObjectId.new("1.3.6.1.6.3.1.1.4.1.0")
+
 class Message
     attr_reader :version
     attr_reader :community
@@ -68,6 +71,9 @@ class Message
             when GetBulkRequest_PDU_TAG
                 raise InvalidPduTag, "get-bulk not valid for #{version.to_s}" if version != :SNMPv2c
                 pdu = PDU.decode(GetBulkRequest, pdu_data)
+            when InformRequest_PDU_TAG
+                raise InvalidPduTag, "inform not valid for #{version.to_s}" if version != :SNMPv2c
+                pdu = PDU.decode(InformRequest, pdu_data)
             when SNMPv2_Trap_PDU_TAG
                 raise InvalidPduTag, "SNMPv2c-trap not valid for #{version.to_s}" if version != :SNMPv2c
                 pdu = PDU.decode(SNMPv2_Trap, pdu_data)
@@ -253,9 +259,8 @@ class SNMPv2_Trap < PDU
     # Throws InvalidTrapVarbind if the sysUpTime varbind is not present.
     #
     def sys_up_time
-        sys_up_time_oid = ObjectId.new("1.3.6.1.2.1.1.3.0")
         varbind = @varbind_list[0]
-        if varbind && (varbind.name == sys_up_time_oid)
+        if varbind && (varbind.name == SYS_UP_TIME_OID)
             return varbind.value
         else
             raise InvalidTrapVarbind, "Expected sysUpTime.0, found " + varbind.to_s
@@ -268,13 +273,22 @@ class SNMPv2_Trap < PDU
     # Throws InvalidTrapVarbind if the snmpTrapOID varbind is not present.
     #
     def trap_oid
-        snmp_trap_oid_oid = ObjectId.new("1.3.6.1.6.3.1.1.4.1.0")
         varbind = @varbind_list[1]
-        if varbind && (varbind.name == snmp_trap_oid_oid)
+        if varbind && (varbind.name == SNMP_TRAP_OID_OID)
             return varbind.value
         else
             raise InvalidTrapVarbind, "Expected snmpTrapOID.0, found " + varbind.to_s 
         end
+    end
+end
+
+##
+# The PDU class for SNMPv2 Inform notifications.  This class is identical
+# to SNMPv2_Trap.
+#
+class InformRequest < SNMPv2_Trap
+    def encode
+        encode_pdu(InformRequest_PDU_TAG)
     end
 end
 

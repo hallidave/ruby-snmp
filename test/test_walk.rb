@@ -1,95 +1,153 @@
 require 'snmp'
 require 'test/unit'
+require 'yaml'
 
 include SNMP 
 
-class GetNextTransport
-    
-    attr_accessor :count
-    
-    def initialize(host, port)
+##
+# Accept get and get-next requests, returning the data from the
+# provided YAML data file.  The file contains a list of OID, value, and
+# value type.
+#
+class YamlDataTransport
+    def self.load_data(yaml_file)
+        values = YAML.load(File.new(yaml_file))
+        @@get_map = {}
+        @@get_next_map = {}
+        values.each_index do |i|
+            name, value, klass = values[i]
+            if i < values.length - 1
+                next_name, next_value, next_klass = values[i + 1]
+            else
+                next_value = SNMP::EndOfMibView
+                next_klass = SNMP::EndOfMibView
+            end
+            @@get_map[name] = [name, value, klass]
+            @@get_next_map[name] = [next_name, next_value, next_klass]
+        end
+    end
+
+    def initialize
+        @responses = []
     end
     
     def close
     end
     
-    def send(data)
-        @data = data
+    def send(data, host, port)
+        msg = Message.decode(data) 
+        req_class = msg.pdu.class
+        if req_class == SNMP::GetRequest
+            oid_map = @@get_map
+        elsif req_class == SNMP::GetNextRequest
+            oid_map = @@get_next_map
+        else
+            raise "request not supported: " + req_class
+        end
+
+        resp = msg.response
+        resp.pdu.vb_list.each do |vb|
+            name, value, klass = oid_map[vb.name.to_s]
+            vb.name = ObjectId.new(name)
+            if klass == "SNMP::NoSuchObject"
+                vb.value = eval(klass) 
+            elsif value
+                vb.value = eval("#{klass}.new(value)")
+            else
+                vb.value = SNMP::NoSuchInstance
+            end
+        end
+        @responses << resp.encode
     end
     
-    def recv(max_bytes)
-        response = Message.decode(@data).response
-        if $transport_pdu_count > 0
-            response.pdu.each_varbind do |vb|
-                vb.name << 1    
-            end
-            $transport_pdu_count -= 1
-        else
-            response.pdu.each_varbind do |vb|
-                vb.name = ObjectId.new("1.3.6.9999")    
-            end
-        end     
-        response.encode[0,max_bytes]
+    def recv(max_bytes) 
+        @responses.shift
     end
 end
 
+class TestTransport < Test::Unit::TestCase
+    
+    def test_get
+        YamlDataTransport.load_data(File.dirname(__FILE__) + "/if_table6.yaml")
+        SNMP::Manager.open(:Transport => YamlDataTransport) do |snmp|
+            value = snmp.get_value("ifDescr.1")
+            assert_equal("lo0", value)
+        end
+    end
+   
+    def test_get_next
+        YamlDataTransport.load_data(File.dirname(__FILE__) + "/if_table6.yaml")
+        SNMP::Manager.open(:Transport => YamlDataTransport) do |snmp|
+            vb = snmp.get_next("ifDescr.1")
+            assert_equal("gif0", vb.vb_list.first.value)
+        end
+    end
+    
+end
 
 class TestWalk < Test::Unit::TestCase
 
+    ##
+    # A single string or single ObjectId can be passed to walk()
+    #
     def test_single_object
-        $transport_pdu_count = 3
         list = []
-        manager.walk("ifTable") do |vb|
+        ifTable6_manager.walk("ifDescr") do |vb|
             assert(vb.kind_of?(VarBind), "Expected a VarBind")
             list << vb
         end
-        assert_equal(3, list.length)    
+        assert_equal(6, list.length)    
 
-        $transport_pdu_count = 3
         list = []
-        manager.walk(ObjectId.new("1.3.4.5")) do |vb|
+        ifTable6_manager.walk(ObjectId.new("1.3.6.1.2.1.2.2.1.2")) do |vb|
             assert(vb.kind_of?(VarBind), "Expected a VarBind")
             list << vb
         end
-        assert_equal(3, list.length)    
+        assert_equal(6, list.length)    
     end
-    
+
+      
+    ##
+    # If a list of one element is passed to walk() then a list of
+    # one element is passed as the block parameter.
+    #
     def test_single_object_list
-        $transport_pdu_count = 1
         executed_block = false
-        manager.walk(["1.3.6.1"]) do |vb_list|
+        ifTable6_manager.walk(["1.3.6.1.2.1.2.2.1.2"]) do |vb_list|
             executed_block = true
             assert_equal(1, vb_list.length)
-            assert_equal("1.3.6.1.1", vb_list.first.name.to_s)
+            assert_equal("1.3.6.1.2.1.2.2.1.2.1", vb_list.first.name.to_s)
+            break
         end
         assert(executed_block, "Did not execute block")
     end
-        
+
+    ##
+    # If a list of multiple items are passed to walk() then
+    # multiple items are passed to the block.
+    #
     def test_object_list
-        $transport_pdu_count = 3
         list1 = []
         list2 = []
-        manager.walk(["ifIndex", "ifDescr"]) do |vb1, vb2|
+        ifTable6_manager.walk(["ifIndex", "ifDescr"]) do |vb1, vb2|
             list1 << vb1
             list2 << vb2
         end
-        assert_equal(3, list1.length)    
-        assert_equal(3, list2.length)    
+        assert_equal(6, list1.length)    
+        assert_equal(6, list2.length)    
     end
-    
+
     def test_empty
-        $transport_pdu_count = 0
-        manager.walk("1.2.3.4") do |vb|
+        ifTable6_manager.walk("1.3.6.1.2.1.2.2.1.2.1") do |vb|
             fail("Expected block to not be executed")
         end
     end
-    
+
     def test_one
-        $transport_pdu_count = 1
         list = []
-        manager.walk(["1.3.6.1", "1.3.6.2"]) do |vb|
-            assert_equal("1.3.6.1.1", vb[0].name.to_s)
-            assert_equal("1.3.6.2.1", vb[1].name.to_s)
+        ifTable1_manager.walk(["1.3.6.1.2.1.2.2.1.1", "1.3.6.1.2.1.2.2.1.2"]) do |vb|
+            assert_equal("1.3.6.1.2.1.2.2.1.1.1", vb[0].name.to_s)
+            assert_equal("1.3.6.1.2.1.2.2.1.2.1", vb[1].name.to_s)
             list << vb
         end
         assert_equal(1, list.length)    
@@ -97,8 +155,13 @@ class TestWalk < Test::Unit::TestCase
     
     private
     
-    def manager
-        Manager.new(:Transport => GetNextTransport)
+    def ifTable1_manager
+        YamlDataTransport.load_data(File.dirname(__FILE__) + "/if_table1.yaml")
+        Manager.new(:Transport => YamlDataTransport)
     end
-    
+
+    def ifTable6_manager
+        YamlDataTransport.load_data(File.dirname(__FILE__) + "/if_table6.yaml")
+        Manager.new(:Transport => YamlDataTransport)
+    end
 end

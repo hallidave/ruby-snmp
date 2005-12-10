@@ -2,13 +2,13 @@ require 'test/unit'
 require 'snmp/manager'
 
 class EchoTransport
-    def initialize(host, port)
+    def initialize
     end
     
     def close
     end
     
-    def send(data)
+    def send(data, host, port)
         @data = data
     end
     
@@ -111,9 +111,8 @@ class TestManager < Test::Unit::TestCase
     end
     
     def test_request_id
-        srand(100)
         id = RequestId.new
-        assert_equal(186422792, id.next)
+        fail if id.next < 0 or id.next >= 2**31
         
         id.force_next(1)
         assert_equal(1, id.next)
@@ -124,6 +123,33 @@ class TestManager < Test::Unit::TestCase
         assert_raise(RuntimeError) { id.force_next(RequestId::MAX_REQUEST_ID) }
         assert_raise(RuntimeError) { id.force_next(0) }
     end
+    
+    def test_trap_v2
+        sent_data = @manager.trap_v2(1234, "1.3.6.1.2.3.4")
+        pdu = Message.decode(sent_data).pdu
+        assert_equal(1234, pdu.sys_up_time)
+        assert_equal("1.3.6.1.2.3.4", pdu.trap_oid.to_s) 
+        assert_equal(2, pdu.vb_list.length)
+
+        sent_data = @manager.trap_v2(1234, "1.3.6.1.2.3.4", ["1.2.3", "1.4.5.6"])
+        pdu = Message.decode(sent_data).pdu
+        assert_equal(1234, pdu.sys_up_time)
+        assert_equal("1.3.6.1.2.3.4", pdu.trap_oid.to_s) 
+        assert_equal(4, pdu.vb_list.length) 
+        assert_equal("1.4.5.6", pdu.vb_list.last.name.to_s)
+    end
+    
+    def test_inform
+        response = @manager.inform(1234, "1.3.6.1.2.3.4")
+        assert_equal(1234, response.vb_list[0].value)
+        assert_equal("1.3.6.1.2.3.4", response.vb_list[1].value.to_s) 
+        assert(2, response.vb_list.length) 
+        
+        response = @manager.inform(1234, "1.3.6.1.2.3.4", ["1.2.3", "1.4.5.6"])
+        assert_equal(1234, response.vb_list[0].value)
+        assert_equal("1.3.6.1.2.3.4", response.vb_list[1].value.to_s) 
+        assert(4, response.vb_list.length) 
+    end 
 end
 
 class TrapTestTransport

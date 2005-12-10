@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>SNMP Library for Ruby</title>
+	<style type="text/css">
+	body {
+		margin:0;
+		padding:0;
+		background-color:white;
+		color:#000;
+		min-width:750px;
+	}
+	
+	a {text-decoration: none; color: #c23; }
+	a:hover { text-decoration: underline; color: #c23; }
+	a:active { color: #fc0; }
+
+	h1, h2, h3, h4, h5, h6 {
+	    color: #333;
+	    font-family: Tahoma, sans-serif;
+	    }
+ 
+  p {
+      font-family: Georgia, serif;
+  }
+ 
+	div#wrap {
+		background:white;
+		margin:0 auto;
+		width:750px;
+	}
+	
+	div#wrap img {
+	  padding: 20px 0px 0px 8px;  
+	}
+	
+	#main {
+		background-color:white;
+		float:left;
+		width:500px;
+	}
+	#main h2, #main h3, #main p, #main pre {
+		padding:0 10px;
+	}
+	#main img {
+	  margin: 0 1em;
+	}
+	
+	#sidebar {
+		background-color:#ffc;
+		width:247px;
+		margin-top: 24px;
+		margin-left:500px;
+		border: solid 2px #c23;
+	}
+	html>body #sidebar {
+		width:250px;
+	}
+
+  #sidebar p {
+    font-family: Tahoma, sans-serif;
+    font-size: small;
+  }
+	#sidebar ul {
+		margin-bottom:0;
+	}
+	#sidebar h3 {
+	  color:#c23
+	}
+	#sidebar h3, #sidebar p {
+		padding:0 10px;
+	}
+	
+	#quotes {
+	  font-weight: bold;
+	  color: #333;
+	  padding-right: 40px;
+	}
+	</style>
+</head>
+<body>
+<div id="wrap">
+  <img src="rubysnmp.gif" alt="Ruby SNMP" width="290" height="50"/>
+   
+	<div id="main">
+	  
+	  <h2>Network Management the Ruby Way</h2>
+	  <img src="equipment.jpg" alt="Network Equipment" width="200" height="118" style="float:right"/>
+	  <p>If you want to write network management applications in Ruby, you're  probably going to need an SNMP library.  The goal of the Ruby SNMP project is to create an interface to SNMP that has the same intuitive, joyful feeling that the Ruby programming language does.  With a crusty, old protocol like SNMP this is easier said than done, but we're working on it!</p>
+	  
+	  <h2>Getting Started</h2>
+
+	  <h3>Install</h3>
+	  <p>If you already have <a href="http://docs.rubygems.org/">RubyGems</a> all you need to do is:</p>
+	  <p><code>gem install snmp</code></p>
+	  <p>If you don't have RubyGems then <a href="http://rubyforge.org/frs/?group_id=126">go get it</a>. Otherwise, you will need to <a href="http://rubyforge.org/projects/snmplib/">download</a> the library from RubyForge, uncompress it, and run install.rb to install it.</p> 
+    
+    <h3>Import MIBs</h3>
+    <p>If you are using standard <a href="http://www.ietf.org/">IETF</a> MIBs then you're ready to go.  Most of the IETF MIBs have been included for you with Ruby SNMP.  Just list the MIBs that you need when you open your SNMP session and you will have full symbolic access to all of the OIDs.</p>
+    
+    <pre><code>
+SNMP::Manager.open(:MibModules =&gt; ["DOCS-IF-MIB"]) do |snmp|
+  mac = ".0.224.111.203.106.116"
+  value = snmp.get_value("docsIfCmtsCmPtr" &lt;&lt; mac)
+end</code></pre>
+    
+    <p>If you don't provide a MIB list then the default MIBs are loaded: SNMPv2-MIB, IF-MIB, IP-MIB, TCP-MIB, UDP-MIB</p>
+    
+    <p>If you want to import custom MIBs, then have a look at the <a href="doc/index.html">documentation</a> for the <code>SNMP::MIB</code> class.  If you use the <code>import_module</code> method, you will need to install <a href="http://www.ibr.cs.tu-bs.de/projects/libsmi/">libsmi</a> first, or create the required YAML file manually.</p>
+    
+    <h3>Start Coding</h3>
+    
+    <p>Have a look at the <a href="doc/index.html">documentation</a> for the <code>SNMP::Manager</code> class.  This class provides the main interface for sending and receiving SNMP PDUs.</p>
+
+<p>Here's an example to get you started.  You can find plenty more in the <a href="doc/index.html">README</a> file</p>    
+<pre><code>
+require 'snmp'
+
+ifTable_columns = ["ifIndex", "ifDescr", "ifInOctets", "ifOutOctets"]
+SNMP::Manager.open(:Host =&gt; 'localhost') do |manager|
+  manager.walk(ifTable_columns) do |row|
+    row.each { |vb| print "\t#{vb.value}" }
+    puts
+  end
+end</code></pre>
+	  
+	  <h2>Useful SNMP Tools</h2>
+
+	  <h3>libsmi</h3>
+
+	  <p>The <a href="http://www.ibr.cs.tu-bs.de/projects/libsmi/">libsmi</a> distribution includes some very useful tools for checking, analyzing, converting, and comparing MIBs.  It also contains a complete archive of IETF and IANA MIBs which saves you from having to find and download them yourself.</p>
+
+	  <h3>Net-SNMP</h3>
+
+	  <p><a href="http://net-snmp.sourceforge.net/">Net-SNMP</a> includes SNMP libraries for implementing SNMP agents and managers in C and a set of SNMP tools for setting and getting information from SNMP agents.</p>
+	  
+	</div>
+	<div id="sidebar">
+	  <h3><a href="doc/index.html">Documentation &raquo;</a></h3>
+    <h3><a href="http://rubyforge.org/projects/snmplib/">Download &raquo;</a></h3>
+    <h3>Happy Users</h3>
+    <div id="quotes">
+    <p>&ldquo;I'd like to thank you for such a fantastic library.&rdquo;</p>
+    <p>&ldquo;This is excellent - better functionality than Perl's Net::SNMP
+    module.&rdquo;</p>
+    <p>&ldquo;Your work alone heightens my interest in Ruby quite a bit.&rdquo;</p>
+    </div>
+    <p>Have feeback?  Send it <a href="http://rubyforge.org/sendmessage.php?touser=842">via RubyForge</a>.</p>
+		<h3>What is SNMP?</h3>
+		<p>SNMP is the Simple Network Management Protocol.  This protocol provides the capability to monitor and manage switches, routers, printers, desktops, and other equipment in your network.</p>
+
+		<h3>What is Ruby?</h3>
+		<p>Ruby is the interpreted scripting language for quick and easy object-oriented programming. It has many features to process text files and to do system management tasks (as in Perl). It is simple, straight-forward, extensible, and portable.</p>
+		<p>Find out more at <a href="http://www.ruby-lang.org/en/">www.ruby-lang.org</a>.</p>
+		<p>&nbsp;</p>
+     
+	</div>
+</div>
+</body>
+</html>
