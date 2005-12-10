@@ -22,6 +22,12 @@ class TestVarBind < Test::Unit::TestCase
         assert_equal("0\f\006\010+\006\001\002\001\001\002\000\005\000", remainder)
     end
 
+    def test_varbind_name_alias_oid
+        vb = VarBind.new("1.2.3.4", OctetString.new("blah"))
+        assert(ObjectId.new("1.2.3.4"), vb.name)
+        assert(ObjectId.new("1.2.3.4"), vb.oid)
+    end
+    
     def test_varbind_list_create
         list = VarBindList.new
         assert_equal(0, list.length)
@@ -97,6 +103,11 @@ class TestVarBind < Test::Unit::TestCase
         assert(s1 == s2)
         assert_not_same(s1, s3)
         assert_equal(s1, s3)
+    end
+    
+    def test_octet_string_to_oid
+        s = OctetString.new("test")
+        assert_equal(ObjectId.new([116, 101, 115, 116]), s.to_oid)
     end
     
     def test_object_id
@@ -196,6 +207,14 @@ class TestVarBind < Test::Unit::TestCase
         assert(i2 > 54000)
     end
     
+    def test_integer_to_oid
+        assert(ObjectId.new("123"), Integer.new(123).to_oid)
+        assert(ObjectId.new("0"), Integer.new(0).to_oid)
+        
+        i = Integer.new(-1)
+        assert_raise(RangeError) { i.to_oid }
+    end
+    
     def test_ip_address_from_string
         ip = IpAddress.new("10.0.255.1")
         assert_equal("10.0.255.1", ip.to_s)
@@ -230,6 +249,11 @@ class TestVarBind < Test::Unit::TestCase
         assert(!ip1.eql?(12))
     end
         
+    def test_ip_address_to_oid
+        ip = IpAddress.new("1.2.3.4")
+        assert_equal(ObjectId.new("1.2.3.4"), ip.to_oid)
+    end
+    
     def test_counter32_create
         i = Counter32.new(12345)
         assert_equal("12345", i.to_s)

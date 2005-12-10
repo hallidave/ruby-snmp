@@ -93,6 +93,11 @@ class Integer
     def encode
         encode_integer(@value)
     end
+    
+    def to_oid
+        raise RangeError, "@{value} cannot be an OID (must be >0)" if @value < 0
+        ObjectId.new([@value])
+    end
 end
 
 class Integer32 < Integer
@@ -114,6 +119,12 @@ class OctetString < String
     
     def encode
         encode_octet_string(self)
+    end
+    
+    def to_oid
+        oid = ObjectId.new
+        each_byte { |b| oid << b }
+        oid
     end
 end
 
@@ -225,6 +236,12 @@ class IpAddress
         octets = []
         @value.each_byte { |b| octets << b.to_s }
         octets.join('.')    
+    end
+    
+    def to_oid
+        oid = ObjectId.new
+        @value.each_byte { |b| oid << b }
+        oid
     end
     
     def ==(other)
@@ -444,6 +461,8 @@ end
 class VarBind
     attr_accessor :name
     attr_accessor :value
+    
+    alias :oid :name
     
     class << self
         def decode(data)

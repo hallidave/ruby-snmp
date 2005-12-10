@@ -334,31 +334,41 @@ class Manager
     #     end
     #   end
     #
-    def walk(object_list)
+    def walk(object_list, index_column=0)
         raise ArgumentError, "expected a block to be given" unless block_given?
-        varbind_list = @mib.varbind_list(object_list, :NullValue)
-        start_oid = varbind_list.first.name
+        vb_list = @mib.varbind_list(object_list, :NullValue)
+        raise ArgumentError, "index_column is past end of varbind list" if index_column >= vb_list.length
+        is_single_vb = object_list.respond_to?(:to_str) ||
+                       object_list.respond_to?(:to_varbind)
+        start_list = vb_list
+        start_oid = vb_list[index_column].name
         last_oid = start_oid
         loop do
-            varbind_list = get_next(varbind_list).varbind_list
-            first_vb = varbind_list.first
-            break if EndOfMibView == first_vb.value 
-            stop_oid = first_vb.name
+            vb_list = get_next(vb_list).vb_list
+            index_vb = vb_list[index_column]
+            break if EndOfMibView == index_vb.value 
+            stop_oid = index_vb.name
             if stop_oid <= last_oid
                 warn "OIDs are not increasing, #{last_oid} followed by #{stop_oid}"
                 break
             end
             break unless stop_oid.subtree_of?(start_oid)
             last_oid = stop_oid
-            if object_list.respond_to?(:to_str) ||
-               object_list.respond_to?(:to_varbind)
+            if is_single_vb
             then
-                yield first_vb
+                yield index_vb
             else
-                yield varbind_list
+                validate_row(vb_list, start_list, index_column)
+                yield vb_list
             end
         end
     end
+    
+    def validate_row(vb_list, start_list, index_column)
+        row_index = vb_list[index_column].name
+        # TODO check indexes for all oids
+    end
+    private :validate_row
     
     ##
     # Set the next request-id instead of letting it be generated
