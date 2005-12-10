@@ -270,10 +270,10 @@ class Manager
     # Sends an SNMPv2c style trap.
     #
     # sys_up_time: an integer respresenting the number of hundredths of
-    #              a second that this system has been up
+    # a second that this system has been up
     #
-    # trap_oid:    an ObjectId or String with the OID identifier for this
-    #              trap
+    # trap_oid: an ObjectId or String with the OID identifier for this
+    # trap
     #
     # object_list: a list of additional varbinds to send with the trap 
     #
@@ -284,13 +284,13 @@ class Manager
     end
                 
     ##
-    # Sends an inform request using the supplied list 
+    # Sends an inform request using the supplied varbind list. 
     #
     # sys_up_time: an integer respresenting the number of hundredths of
-    #              a second that this system has been up
+    # a second that this system has been up
     #
-    # trap_oid:    an ObjectId or String with the OID identifier for this
-    #              inform request
+    # trap_oid: an ObjectId or String with the OID identifier for this
+    # inform request
     #
     # object_list: a list of additional varbinds to send with the inform 
     #
