@@ -37,7 +37,7 @@ Changes for version 0.6.0:
 * Fixed some problems with retrying requests that caused annoying "Request ID
   mismatch" warnings and caused too few retries to be attempted
 * Thanks to Mark Cotner, Dan Hamlin, Tim Howe, Diana Eichert, Ery Lee,
-  Jan Ã…ge Johnsen, and Jeff Foster for their help and suggestions (and
+  Jan Åge Johnsen, and Jeff Foster for their help and suggestions (and
   apologies in advance if I have forgotten someone).
 
 Changes for version 0.5.1:
@@ -97,13 +97,13 @@ formats.
 From the .gem file you can install using
 RubyGems[http://rubyforge.org/projects/rubygems].
 
-  gem install snmp-0.5.0.gem
+  gem install snmp-0.6.0.gem
 
 From the .tgz or .zip file you can install using
 setup.rb[http://i.loveruby.net/en/prog/setup.html].  Uncompress the archive
 and then run setup.
 
-  cd snmp-0.5.0
+  cd snmp-0.6.0
   ruby setup.rb (may require root privilege)  
 
 == Testing

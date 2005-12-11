@@ -9,13 +9,14 @@ Rake::TestTask.new do |test|
 end
 
 # package target
-PKG_VERSION = '0.5.1'
+PKG_VERSION = '0.6.0'
 PKG_FILES = FileList[
     'Rakefile',
     'README',
     'setup.rb',
     'lib/**/*.rb',
     'test/**/test*.rb',
+    'test/**/*.yaml',
     'examples/*.rb',
     'data/**/*.yaml']
 

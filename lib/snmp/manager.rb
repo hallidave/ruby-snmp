@@ -329,13 +329,13 @@ class Manager
     ##
     # Sends an inform request using the supplied varbind list. 
     #
-    # sys_up_time: an integer respresenting the number of hundredths of
-    # a second that this system has been up
+    # sys_up_time: An integer respresenting the number of hundredths of
+    # a second that this system has been up.
     #
-    # trap_oid: an ObjectId or String with the OID identifier for this
-    # inform request
+    # trap_oid: An ObjectId or String with the OID identifier for this
+    # inform request.
     #
-    # object_list: a list of additional varbinds to send with the inform 
+    # object_list: A list of additional varbinds to send with the inform. 
     #
     def inform(sys_up_time, trap_oid, object_list=[])
         vb_list = create_trap_vb_list(sys_up_time, trap_oid, object_list)
