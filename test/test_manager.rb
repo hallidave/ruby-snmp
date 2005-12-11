@@ -124,6 +124,25 @@ class TestManager < Test::Unit::TestCase
         assert_raise(RuntimeError) { id.force_next(0) }
     end
     
+    def test_trap_v1
+        manager = Manager.new(:Transport => EchoTransport, :Version => :SNMPv1)
+        sent_data = manager.trap_v1(
+            "enterprises.9",
+            "10.1.2.3",
+            :enterpriseSpecific,
+            42,
+            12345,
+            [VarBind.new("1.3.6.1.2.3.4", Integer.new(1))]
+        )
+        pdu = Message.decode(sent_data).pdu
+        assert_equal(ObjectId.new("1.3.6.1.4.1.9"), pdu.enterprise)
+        assert_equal(IpAddress.new("10.1.2.3"), pdu.agent_addr)
+        assert_equal(:enterpriseSpecific, pdu.generic_trap)
+        assert_equal(42, pdu.specific_trap)
+        assert_equal(TimeTicks.new(12345), pdu.timestamp)
+        assert_equal(1, pdu.vb_list.length)
+    end
+    
     def test_trap_v2
         sent_data = @manager.trap_v2(1234, "1.3.6.1.2.3.4")
         pdu = Message.decode(sent_data).pdu

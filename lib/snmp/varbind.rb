@@ -238,12 +238,13 @@ class IpAddress
     # (i.e. "10.1.2.3").
     #
     def initialize(value_data)
-        if value_data.length > 4
-            value_data = parse_string(value_data)
-        elsif value_data.length != 4
+        ip = value_data.to_str
+        if ip.length > 4
+            ip = parse_string(ip)
+        elsif ip.length != 4
             raise InvalidIpAddress, "Expected 4 octets or formatted string, got #{value_data.inspect}"
         end
-        @value = value_data
+        @value = ip
     end
     
     ##

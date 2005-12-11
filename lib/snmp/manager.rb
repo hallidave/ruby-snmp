@@ -92,9 +92,9 @@ end
 #
 # See MIB.varbind_list for a description of valid parameter formats.
 #
-# The following modules are loaded by default: "SNMPv2-MIB", "IF-MIB",
-# "IP-MIB", "TCP-MIB", "UDP-MIB".  All of the current IETF MIBs have been
-# imported and are available for loading.
+# The following modules are loaded by default: "SNMPv2-SMI", "SNMPv2-MIB",
+# "IF-MIB", "IP-MIB", "TCP-MIB", "UDP-MIB".  All of the current IETF MIBs
+# have been imported and are available for loading.
 #
 # Additional modules may be imported using the MIB class.  The
 # current implementation of the importing code requires that the
@@ -132,7 +132,7 @@ class Manager
         :Transport => UDPTransport,
         :MaxReceiveBytes => 8000,
         :MibDir => MIB::DEFAULT_MIB_PATH,
-        :MibModules => ["SNMPv2-MIB", "IF-MIB", "IP-MIB", "TCP-MIB", "UDP-MIB"]}
+        :MibModules => ["SNMPv2-SMI", "SNMPv2-MIB", "IF-MIB", "IP-MIB", "TCP-MIB", "UDP-MIB"]}
 
     @@request_id = RequestId.new
     
@@ -267,15 +267,58 @@ class Manager
     end
 
     ##
+    # Sends an SNMPv1 style trap.
+    #
+    # enterprise: The enterprise OID from the IANA assigned numbers
+    # (http://www.iana.org/assignments/enterprise-numbers) as a String or
+    # an ObjectId.
+    #
+    # agent_addr: The IP address of the SNMP agent as a String or IpAddress.
+    #
+    # generic_trap: The generic trap identifier.  One of :coldStart,
+    # :warmStart, :linkDown, :linkUp, :authenticationFailure,
+    # :egpNeighborLoss, or :enterpriseSpecific 
+    #
+    # specific_trap: An integer representing the specific trap type for
+    # an enterprise-specific trap.
+    #
+    # timestamp: An integer respresenting the number of hundredths of
+    # a second that this system has been up.
+    #
+    # object_list: A list of additional varbinds to send with the trap. 
+    #
+    # For example:
+    #
+    #   Manager.open(:Version => :SNMPv1) do |snmp|
+    #     snmp.trap_v1(
+    #       "enterprises.9",
+    #       "10.1.2.3",
+    #       :enterpriseSpecific,
+    #        42,
+    #       12345,
+    #       [VarBind.new("1.3.6.1.2.3.4", Integer.new(1))])
+    #  end
+    #
+    def trap_v1(enterprise, agent_addr, generic_trap, specific_trap, timestamp, object_list=[])
+        vb_list = @mib.varbind_list(object_list, :KeepValue)
+        ent_oid = @mib.oid(enterprise)
+        agent_ip = IpAddress.new(agent_addr)
+        specific_int = Integer(specific_trap)
+        ticks = TimeTicks.new(timestamp)
+        trap = SNMPv1_Trap.new(ent_oid, agent_ip, generic_trap, specific_int, ticks, vb_list)
+        send_request(trap, @community, @host, @trap_port)
+    end
+    
+    ##
     # Sends an SNMPv2c style trap.
     #
-    # sys_up_time: an integer respresenting the number of hundredths of
-    # a second that this system has been up
+    # sys_up_time: An integer respresenting the number of hundredths of
+    # a second that this system has been up.
     #
-    # trap_oid: an ObjectId or String with the OID identifier for this
-    # trap
+    # trap_oid: An ObjectId or String with the OID identifier for this
+    # trap.
     #
-    # object_list: a list of additional varbinds to send with the trap 
+    # object_list: A list of additional varbinds to send with the trap. 
     #
     def trap_v2(sys_up_time, trap_oid, object_list=[])
         vb_list = create_trap_vb_list(sys_up_time, trap_oid, object_list)

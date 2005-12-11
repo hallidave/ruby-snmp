@@ -9,16 +9,13 @@ that Ruby can run.
 
 See snmplib.rubyforge.org[http://snmplib.rubyforge.org/] for more info.
 
-Version 0.5.1 fixes bugs #2054 and #2164.  Responses were ignored if they did
-not come back from the same host that the request was sent to.  This behavior
-causes problems for some multi-homed hosts.
+Version 0.6.0 of this software supports the following:
 
-Version 0.5.0 of this software supports the following:
-
-* The GetRequest, GetNextRequest, GetBulkRequest, SetRequest, and Response
-  PDUs
+* The GetRequest, GetNextRequest, GetBulkRequest, SetRequest, Response
+  SNMPv1_Trap, SNMPv2_Trap, and Inform PDUs
 * All of the ASN.1 data types defined by SNMPv1 and SNMPv2c
-* Trap handling for both v1 and v2 traps
+* Sending informs and v1 and v2 traps
+* Trap handling for v1 and v2 traps
 * Symbolic OID values (ie. "ifTable" instead of "1.3.6.1.2.1.2.2") as   
   parameters to the SNMP.Manager API
 * Includes symbol data files for all current IETF MIBs 
@@ -28,8 +25,26 @@ examples below for more details.
 
 == Changes
 
-Changes from version 0.4.0:
+Changes for version 0.6.0:
 
+* Added support for sending informs and traps for SNMPv2c and traps for
+  SNMPv1
+* Improved SNMP::Manager#walk so that it can handle missing varbinds
+  when reading tables.  The indexes for a table row read by #walk are now
+  guaranteed to match. 
+* Added to_oid methods to SNMP::OctetString, SNMP::Integer, and
+  SNMP::IpAddress (feature request #2486)
+* Fixed some problems with retrying requests that caused annoying "Request ID
+  mismatch" warnings and caused too few retries to be attempted
+* Thanks to Mark Cotner, Dan Hamlin, Tim Howe, Diana Eichert, Ery Lee,
+  Jan Åge Johnsen, and Jeff Foster for their help and suggestions (and
+  apologies in advance if I have forgotten someone).
+
+Changes for version 0.5.1:
+
+* Fixed bugs #2054 and #2164.  Responses were ignored if they did
+  not come back from the same host that the request was sent to.  This
+  behavior causes problems for some multi-homed hosts.
 * Fixed bugs #1679 (NameError in Manager.get_response()) and #1736 
   (Notifications not included in YAML output).
 * Added Manager.get_value convenience method to get a list of values for a 
@@ -40,7 +55,7 @@ Changes from version 0.4.0:
 * Break out of Manager.walk instead of looping forever if OIDs returned by the 
   remote host are not in ascending order.
 
-Changes from version 0.3.0:
+Changes for version 0.4.0:
 
 * Added support for loading MIBs and using symbolic OID values.
 * Enhanced Manager.walk
@@ -50,7 +65,7 @@ Changes from version 0.3.0:
       processing of results.
 * Some minor improvements to code structure and error messages.
 
-Changes from version 0.2.0:
+Changes for version 0.3.0:
 
 * Added SNMPv1_Trap and SNMPv2_Trap classes
 * Added TrapListener class for receiving v1 and v2 traps
@@ -59,7 +74,7 @@ Changes from version 0.2.0:
 * Defined IpAddress.== and IpAddress.eql? so that IpAddress objects can be
   compared by value
 
-Changes from version 0.1.0:
+Changes for version 0.2.0:
 
 * Added GetBulkRequest
 * Added open and close methods to the Manager class to ensure that
@@ -94,10 +109,9 @@ and then run setup.
 == Testing
 
 This library has received limited testing:
-* The unit tests have been executed with Ruby 1.8.2 on Mac OS X 10.4 and
-  Windows XP.
+* The unit tests have been executed with Ruby 1.8.3 on Mac OS X 10.4.
 * Basic interoperability testing has been done with the
-  net-snmp[http://www.net-snmp.org/] tools, but not much beyond that.
+  net-snmp[http://www.net-snmp.org/] tools.
 
 I'm very interested in hearing about successes or failures on other platforms.
 

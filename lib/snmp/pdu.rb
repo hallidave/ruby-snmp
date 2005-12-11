@@ -308,6 +308,8 @@ class SNMPv1_Trap
     attr_accessor :timestamp
     attr_accessor :varbind_list
     
+    alias :vb_list :varbind_list
+    
     def self.decode(pdu_data)
         oid_data, remainder = decode_object_id(pdu_data)
         enterprise = ObjectId.new(oid_data)

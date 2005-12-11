@@ -233,6 +233,12 @@ class TestVarBind < Test::Unit::TestCase
         assert_raise(InvalidIpAddress) { IpAddress.new("1.2.3.-1") }
         assert_raise(InvalidIpAddress) { IpAddress.new("1.2.3") }
     end
+
+    def test_ip_address_from_self
+        ip1 = IpAddress.new("1.2.3.4")
+        ip2 = IpAddress.new(ip1)
+        assert_equal(ip1, ip2)
+    end
     
     def test_ip_address_create
         ip = IpAddress.new("\001\002\003\004")
