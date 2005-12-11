@@ -144,17 +144,23 @@ class ObjectId < Array
     # in the format "n.n.n.n.n.n" or an array of integers.
     #
     def initialize(id=[])
-        if id.respond_to? :to_str
+        if id.nil?
+            raise ArgumentError
+        elsif id.respond_to? :to_str
             super(make_integers(id.to_str.split(".")))
         else
             super(make_integers(id.to_ary))
         end
     rescue ArgumentError
-        raise ArgumentError, "'#{id}' not a valid object ID"
+        raise ArgumentError, "#{id.inspect}:#{id.class} not a valid object ID"
     end
     
     def to_varbind
         VarBind.new(self, Null)
+    end
+    
+    def to_oid
+        self
     end
     
     def to_s
@@ -182,6 +188,24 @@ class ObjectId < Array
                 return false if parent_tree[i] != self[i]
             end
             true
+        end
+    end
+    
+    ##
+    # Returns an index based on the difference between this ObjectId
+    # and the provided parent ObjectId.
+    #
+    # For example, ObjectId.new("1.3.6.1.5").index("1.3.6.1") returns an
+    # ObjectId of "5".
+    #
+    def index(parent_tree)
+        parent_tree = make_object_id(parent_tree)
+        if not subtree_of?(parent_tree)
+            raise ArgumentError, "#{self.to_s} not a subtree of #{parent_tree.to_s}"
+        elsif self.length == parent_tree.length
+            raise ArgumentError, "OIDs are the same"
+        else
+            ObjectId.new(self[parent_tree.length..-1])
         end
     end
     

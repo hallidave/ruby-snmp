@@ -334,6 +334,15 @@ class Manager
     #     end
     #   end
     #
+    # The index_column identifies the column that will provide the index
+    # for each row.  This information is used to deal with "holes" in a
+    # table (when a row is missing a varbind for one column).  A missing
+    # varbind is replaced with a varbind with the value NoSuchInstance.
+    #
+    # Note: If you are getting back rows where all columns have a value of
+    # NoSuchInstance then your index column is probably missing one of the
+    # rows.  Choose an index column that includes all indexes for the table.
+    # 
     def walk(object_list, index_column=0)
         raise ArgumentError, "expected a block to be given" unless block_given?
         vb_list = @mib.varbind_list(object_list, :NullValue)
@@ -355,18 +364,33 @@ class Manager
             break unless stop_oid.subtree_of?(start_oid)
             last_oid = stop_oid
             if is_single_vb
-            then
                 yield index_vb
             else
-                validate_row(vb_list, start_list, index_column)
+                vb_list = validate_row(vb_list, start_list, index_column)
                 yield vb_list
             end
         end
     end
     
+    ##
+    # Helper method for walk.  Checks all of the VarBinds in vb_list to
+    # make sure that the row indices match.  If the row index does not
+    # match the index column, then that varbind is replaced with a varbind
+    # with a value of NoSuchInstance.
+    #
     def validate_row(vb_list, start_list, index_column)
-        row_index = vb_list[index_column].name
-        # TODO check indexes for all oids
+        start_vb = start_list[index_column]
+        index_vb = vb_list[index_column]
+        row_index = index_vb.name.index(start_vb.name)
+        vb_list.each_index do |i|
+            if i != index_column
+                expected_oid = start_list[i].name + row_index 
+                if vb_list[i].name != expected_oid
+                    vb_list[i] = VarBind.new(expected_oid, NoSuchInstance)
+                end
+            end
+        end
+        vb_list
     end
     private :validate_row
     

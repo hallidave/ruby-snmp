@@ -49,7 +49,7 @@ class YamlDataTransport
         resp.pdu.vb_list.each do |vb|
             name, value, klass = oid_map[vb.name.to_s]
             vb.name = ObjectId.new(name)
-            if klass == "SNMP::NoSuchObject"
+            if klass == "SNMP::NoSuchObject" or klass == "SNMP::NoSuchInstance"
                 vb.value = eval(klass) 
             elsif value
                 vb.value = eval("#{klass}.new(value)")
@@ -135,6 +135,15 @@ class TestWalk < Test::Unit::TestCase
         end
         assert_equal(6, list1.length)    
         assert_equal(6, list2.length)    
+
+        list1 = []
+        list2 = []
+        ifTable6_manager.walk(["ifIndex", "ifDescr"], 1) do |vb1, vb2|
+            list1 << vb1
+            list2 << vb2
+        end
+        assert_equal(6, list1.length)    
+        assert_equal(6, list2.length)    
     end
 
     def test_empty
@@ -149,6 +158,21 @@ class TestWalk < Test::Unit::TestCase
             assert_equal("1.3.6.1.2.1.2.2.1.1.1", vb[0].name.to_s)
             assert_equal("1.3.6.1.2.1.2.2.1.2.1", vb[1].name.to_s)
             list << vb
+        end
+        assert_equal(1, list.length)    
+    end
+
+    def test_hole_in_one
+        list = []
+        ifTable1_manager.walk(["ifIndex", "ifDescr", "ifType"]) do |vb|
+            assert_equal("1.3.6.1.2.1.2.2.1.1.1", vb[0].name.to_s) 
+            assert_equal(1, vb[0].value)
+            assert_equal("1.3.6.1.2.1.2.2.1.2.1", vb[1].name.to_s)
+            assert_equal("lo0", vb[1].value)
+            assert_equal("1.3.6.1.2.1.2.2.1.3.1", vb[2].name.to_s)
+            assert_equal(NoSuchInstance, vb[2].value)
+            list << vb
+            break
         end
         assert_equal(1, list.length)    
     end

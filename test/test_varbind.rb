@@ -165,6 +165,17 @@ class TestVarBind < Test::Unit::TestCase
         assert(id1.subtree_of?("1.3.3.4"))
         assert(!id4.subtree_of?("1.3.3.4"))
     end
+
+    def test_object_id_index
+        id1 = ObjectId.new("1.3.3.4")
+        id2 = ObjectId.new("1.3.3.4.1")
+        id3 = ObjectId.new("1.3.3.4.1.2")
+        assert(ObjectId.new("1"), id2.index(id1))
+        assert(ObjectId.new("1.2"), id3.index(id1))
+        assert(ObjectId.new("1.2"), id3.index("1.3.3.4"))
+        assert_raise(ArgumentError) { id1.index(id3) }
+        assert_raise(ArgumentError) { id1.index(id1) } 
+    end
     
     def test_object_name_from_string
         id = ObjectName.new("1.3.4.5.6")
