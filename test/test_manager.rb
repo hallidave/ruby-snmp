@@ -1,22 +1,6 @@
 require 'test/unit'
 require 'snmp/manager'
 
-class EchoTransport
-    def initialize
-    end
-    
-    def close
-    end
-    
-    def send(data, host, port)
-        @data = data
-    end
-    
-    def recv(max_bytes)
-        SNMP::Message.decode(@data).response.encode[0,max_bytes]
-    end
-end
-
 class TestManager < Test::Unit::TestCase 
 
     include SNMP

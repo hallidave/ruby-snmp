@@ -9,67 +9,12 @@
 
 require 'snmp/pdu'
 require 'snmp/mib'
+require 'snmp/base'
 require 'socket'
 require 'timeout'
-require 'thread'
 
 module SNMP
 
-class RequestTimeout < RuntimeError; end
-
-##
-# Wrap socket so that it can be easily substituted for testing or for
-# using other transport types (e.g. TCP)
-#
-class UDPTransport
-    def initialize
-        @socket = UDPSocket.open
-    end
-
-    def close
-        @socket.close
-    end
-
-    def send(data, host, port)
-        @socket.send(data, 0, host, port)
-    end
-
-    def recv(max_bytes)
-        @socket.recv(max_bytes)
-    end
-end
-
-##
-# Manage a request-id in the range 1..2**31-1
-#
-class RequestId
-    MAX_REQUEST_ID = 2**31
-    
-    def initialize
-        @lock = Mutex.new
-        @request_id = rand(MAX_REQUEST_ID)
-    end
-
-    def next
-        @lock.synchronize do
-            @request_id += 1
-            @request_id = 1 if @request_id == MAX_REQUEST_ID
-            return  @request_id
-        end
-    end
-    
-    def force_next(next_id)
-        new_request_id = next_id.to_i
-        if new_request_id < 1 || new_request_id >= MAX_REQUEST_ID
-            raise "Invalid request id: #{new_request_id}"
-        end
-        new_request_id = MAX_REQUEST_ID if new_request_id == 1
-        @lock.synchronize do
-            @request_id = new_request_id - 1
-        end
-    end
-end
-    
 ##
 # == SNMP Manager
 #
@@ -114,7 +59,7 @@ end
 #                     :MibModules => ["MY-MODULE-MIB", "SNMPv2-MIB", ...])
 #
 
-class Manager
+class Manager < ManagerBase
 
     ##
     # Default configuration.  Individual options may be overridden when
@@ -136,17 +81,8 @@ class Manager
 
     @@request_id = RequestId.new
     
-    ##
-    # Retrieves the current configuration of this Manager.
-    #
-    attr_reader :config
-    
-    ##
-    # Retrieves the MIB for this Manager.
-    #
-    attr_reader :mib
-    
-    def initialize(config = {})
+    def initialize(config = {}) 
+        super()
         if block_given?
             warn "SNMP::Manager::new() does not take block; use SNMP::Manager::open() instead"
         end
@@ -162,7 +98,6 @@ class Manager
         @retries = @config[:Retries]
         @transport = @config[:Transport].new 
         @max_bytes = @config[:MaxReceiveBytes]
-        @mib = MIB.new
         load_modules(@config[:MibModules], @config[:MibDir])
     end
     
@@ -451,10 +386,6 @@ class Manager
         trace = caller(2)
         location = trace[0].sub(/:in.*/,'')
         Kernel::warn "#{location}: warning: #{message}"
-    end
-    
-    def load_modules(module_list, mib_dir)
-        module_list.each { |m| @mib.load_module(m, mib_dir) }
     end
     
     def try_request(request, community=@community, host=@host, port=@port)
