@@ -367,6 +367,24 @@ class TimeTicks < UnsignedInteger
     def encode
         encode_tagged_integer(TimeTicks_TAG, @value)
     end
+    
+    def to_s
+        days, remainder = @value.divmod(8640000)
+        hours, remainder = remainder.divmod(360000)
+        minutes, remainder = remainder.divmod(6000)
+        seconds, hundredths = remainder.divmod(100)
+        case
+            when days < 1
+                sprintf('%02d:%02d:%02d.%02d',
+                        hours, minutes, seconds, hundredths)
+            when days == 1
+                sprintf('1 day, %02d:%02d:%02d.%02d',
+                        hours, minutes, seconds, hundredths)
+            when days > 1
+                sprintf('%d days, %02d:%02d:%02d.%02d',
+                        days, hours, minutes, seconds, hundredths)
+        end
+    end
 end
 
 class Opaque < OctetString

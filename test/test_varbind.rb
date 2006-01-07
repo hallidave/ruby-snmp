@@ -310,4 +310,23 @@ class TestVarBind < Test::Unit::TestCase
         end
     end
     
+    def test_timeticks
+        assert_equal("00:00:00.00", TimeTicks.new(0).to_s)
+        assert_equal("00:00:00.01", TimeTicks.new(1).to_s)
+        assert_equal("00:00:01.00", TimeTicks.new(100).to_s)
+        assert_equal("00:01:00.00", TimeTicks.new(60 * 100).to_s)
+        assert_equal("01:00:00.00", TimeTicks.new(60 * 60 * 100).to_s)
+        assert_equal("23:59:59.99", TimeTicks.new(24 * 60 * 60 * 100 - 1).to_s)
+        assert_equal("1 day, 00:00:00.00", TimeTicks.new(24 * 60 * 60 * 100).to_s)
+        assert_equal("1 day, 23:59:59.99", TimeTicks.new(48 * 60 * 60 * 100 - 1).to_s)
+        assert_equal("2 days, 00:00:00.00", TimeTicks.new(48 * 60 * 60 * 100).to_s)
+        assert_equal("497 days, 02:27:52.95", TimeTicks.new(4294967295).to_s)
+        assert_equal(4294967295, TimeTicks.new(4294967295).to_i)
+        assert_raise(ArgumentError) {
+            TimeTicks.new(4294967296)
+        }
+        assert_raise(ArgumentError) {
+            TimeTicks.new(-1)
+        }
+    end
 end
