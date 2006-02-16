@@ -502,18 +502,23 @@ class UDPServerTransport
     def close
         @socket.close
     end
+
+    def send(data, host, port)
+        @socket.send(data, 0, host, port)
+    end
     
     def recvfrom(max_bytes)
         data, host_info = @socket.recvfrom(max_bytes)
-        flags, host_socket, host_name, host_ip = host_info
-        return data, host_ip
+        flags, host_port, host_name, host_ip = host_info
+        return data, host_ip, host_port
     end
 end
 
 ##
 # == SNMP Trap Listener
 #
-# Listens to a socket and processes received traps in a separate thread.
+# Listens to a socket and processes received traps and informs in a separate
+# thread.
 #
 # === Example
 #
@@ -591,7 +596,9 @@ class TrapListener
     
     ##
     # Define a trap handler block for all SNMPv2c traps.  The trap yielded
-    # to the block will always be an SNMPv2_Trap.
+    # to the block will always be an SNMPv2_Trap.  Note that InformRequest
+    # is a subclass of SNMPv2_Trap, so inform PDUs are also received by
+    # this handler.
     #
     def on_trap_v2c(&block)
         raise ArgumentError, "a block must be provided" unless block
@@ -625,11 +632,14 @@ class TrapListener
     def process_traps(trap_listener)
         @handler_init.call(trap_listener) if @handler_init
         loop do
-            data, source_ip = @transport.recvfrom(@max_bytes)
+            data, source_ip, source_port = @transport.recvfrom(@max_bytes)
             begin
                 message = Message.decode(data)
                 if @config[:Community] == message.community
                     trap = message.pdu
+                    if trap.kind_of?(InformRequest)
+                        @transport.send(message.response.encode, source_ip, source_port)
+                    end
                     trap.source_ip = source_ip
                     select_handler(trap).call(trap)
                 end

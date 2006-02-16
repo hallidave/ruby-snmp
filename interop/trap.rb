@@ -39,6 +39,15 @@ def test_v2c_trap
     assert_equal(5, trap.varbind_list.length)
 end
 
+def test_inform
+    system("snmpinform -v 2c -c public localhost:1062 2176117721 linkUp ifIndex.1 i 1 ifAdminStatus.1 i 2 ifOperStatus.1 i 6")
+    trap = next_trap
+    assert(trap.kind_of?(InformRequest))
+    assert_equal(2176117721, trap.sys_up_time)
+    assert_equal("1.3.6.1.6.3.1.1.5.4", trap.trap_oid.to_s)
+    assert_equal(5, trap.varbind_list.length)
+end
+
 def teardown
     @manager.exit
 end

@@ -1,8 +1,8 @@
 system "rake test"
 exit if $? != 0
 
-RELEASE="0.6.0"
-TAG_CMD="svn copy svn+ssh://davehal@rubyforge.org/var/svn/snmplib/trunk svn+ssh://davehal@rubyforge.org/var/svn/snmplib/tags/release-#{RELEASE} -m 'Tagging release #{RELEASE}'"
+RELEASE="0.6.1"
+TAG_CMD="svn copy svn+ssh://davehal@rubyforge.org/var/svn/snmplib/branches/branch-0.6.0 svn+ssh://davehal@rubyforge.org/var/svn/snmplib/tags/release-#{RELEASE} -m 'Tagging release #{RELEASE}'"
 
 def check_svn_st
     puts "Checking svn committed"

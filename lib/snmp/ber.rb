@@ -117,7 +117,7 @@ module BER #:nodoc:all
     def decode_timeticks(data)
         tag, value, remainder = decode_tlv(data)
         raise InvalidTag, tag.to_s if tag != TimeTicks_TAG
-        return decode_integer_value(value), remainder
+        return decode_uinteger_value(value), remainder
     end
     
     def decode_integer_value(value)
@@ -126,6 +126,15 @@ module BER #:nodoc:all
             result -= (1 << (8 * value.length))
         end
         result
+    end
+    
+    ##
+    # Decode an integer, ignoring the sign bit.  Some agents insist on
+    # encoding 32 bit unsigned integers with four bytes even though it
+    # should be 5 bytes (at least the way I read it).
+    #
+    def decode_uinteger_value(value)
+        build_integer(value, 0, value.length)
     end
     
     def build_integer(data, start, num_octets)
