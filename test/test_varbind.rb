@@ -282,6 +282,16 @@ class TestVarBind < Test::Unit::TestCase
     def test_counter32_decode
         i = Counter32.decode("09")
         assert_equal(12345, i.to_i)
+    end 
+    
+    # Decode as a positive number even though high bit is set.
+    # Not strict ASN.1, but implemented in some agents.
+    def test_unsigned_decode
+        i = Counter32.decode("\201\264\353\331")
+        assert_equal(2176117721, i.to_i)
+
+        i = TimeTicks.decode("\201\264\353\331")
+        assert_equal(2176117721, i.to_i)
     end
     
     def test_counter64

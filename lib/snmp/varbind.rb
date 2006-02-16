@@ -311,13 +311,13 @@ class UnsignedInteger < Integer
         raise ArgumentError, "Negative integer invalid: #{value}" if value < 0
         raise ArgumentError, "Out of range: #{value}" if value > 4294967295
     end
+    
+    def self.decode(value_data)
+        self.new(decode_uinteger_value(value_data))
+    end
 end
 
 class Counter32 < UnsignedInteger
-    def self.decode(value_data)
-        Counter32.new(decode_integer_value(value_data))
-    end
-    
     def asn1_type
         "Counter32"
     end
@@ -328,10 +328,6 @@ class Counter32 < UnsignedInteger
 end
 
 class Gauge32 < UnsignedInteger
-    def self.decode(value_data)
-        Gauge32.new(decode_integer_value(value_data))
-    end
-    
     def asn1_type
         "Gauge32"
     end
@@ -342,10 +338,6 @@ class Gauge32 < UnsignedInteger
 end
 
 class Unsigned32 < UnsignedInteger
-    def self.decode(value_data)
-        Unsigned32.new(decode_integer_value(value_data))
-    end
-    
     def asn1_type
         "Unsigned32"
     end
@@ -356,10 +348,6 @@ class Unsigned32 < UnsignedInteger
 end
 
 class TimeTicks < UnsignedInteger
-    def self.decode(value_data)
-        TimeTicks.new(decode_integer_value(value_data))
-    end
-    
     def asn1_type
         "TimeTicks"
     end

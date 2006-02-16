@@ -25,6 +25,11 @@ examples below for more details.
 
 == Changes
 
+Changes for version 0.6.1:
+
+* Made decoding of unsigned integers more liberal, so that they are interpreted as positive integers even if the high bit is set.
+* Added support for receiving InformRequest PDUs from the TrapListener class.
+
 Changes for version 0.6.0:
 
 * Added support for sending informs and traps for SNMPv2c and traps for

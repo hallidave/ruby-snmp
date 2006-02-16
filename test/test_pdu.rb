@@ -154,17 +154,18 @@ class TestProtocol < Test::Unit::TestCase
         agent_addr = IpAddress.new("1.2.3.4")
         generic_trap = :linkDown
         specific_trap = 0
-        timestamp = TimeTicks.new(1234)
+        timestamp = TimeTicks.new(2176117721)
         varbinds = VarBindList.new([VarBind.new("1.3.6.2", Integer.new(1))])
         trap = SNMPv1_Trap.new(enterprise, agent_addr, generic_trap, specific_trap, timestamp, varbinds)
-        assert_equal("\244\"\006\004+\006\001{@\004\001\002\003\004\002\001\002\002\001\000C\002\004\3220\n0\010\006\003+\006\002\002\001\001", trap.encode)
+        assert_equal("\244%\006\004+\006\001{@\004\001\002\003\004\002\001\002\002\001\000C\005\000\201\264\353\3310\n0\010\006\003+\006\002\002\001\001", trap.encode)
 
         encoded = Message.new(:SNMPv1, "public", trap).encode
         trap = Message.decode(encoded).pdu
         assert_equal(enterprise, trap.enterprise)
         assert_equal(agent_addr, trap.agent_addr)
         assert_equal(:linkDown, trap.generic_trap)
-        assert_equal(0, trap.specific_trap)
+        assert_equal(0, trap.specific_trap) 
+        assert_equal(2176117721, trap.timestamp.to_i)
         assert_equal(1, trap.varbind_list.length)
         assert_equal(ObjectId.new("1.3.6.2"), trap.varbind_list.first.name)
     end
