@@ -2,6 +2,7 @@ require 'rake'
 require 'rake/testtask'
 require 'rake/gempackagetask'
 require 'rake/rdoctask'
+require 'rake/clean'
 
 # test target
 Rake::TestTask.new do |test|
@@ -9,7 +10,7 @@ Rake::TestTask.new do |test|
 end
 
 # package target
-PKG_VERSION = '1.0.0'
+PKG_VERSION = '1.0.1'
 PKG_FILES = FileList[
     'Rakefile',
     'README',
@@ -19,6 +20,10 @@ PKG_FILES = FileList[
     'test/**/*.yaml',
     'examples/*.rb',
     'data/**/*.yaml']
+
+CLEAN.include 'pkg'
+CLEAN.include 'doc'
+CLEAN.include 'web/web'
 
 spec = Gem::Specification.new do |s|
     s.platform = Gem::Platform::RUBY
@@ -49,5 +54,9 @@ Rake::RDocTask.new do |doc|
     doc.main = "README"
     doc.rdoc_files.include('README', 'lib/**/*.rb')
     doc.title = "SNMP Library for Ruby"
+end 
+
+task :web => :rdoc do
+    require 'web/generate'  
 end
 

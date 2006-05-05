@@ -8,7 +8,7 @@ include SNMP
 
 def setup
     @queue = Queue.new
-    @manager = TrapListener.new(:Port => 1062) do |manager|
+    @manager = TrapListener.new(:Host => 'localhost', :Port => 1062) do |manager|
         manager.on_trap_default do |trap|
             @queue << trap
         end

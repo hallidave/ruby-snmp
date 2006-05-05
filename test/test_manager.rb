@@ -173,7 +173,7 @@ end
 
 class TrapTestTransport
     include SNMP
-    def initialize(port)
+    def initialize(host, port)
         @count = 0
         sys_up_varbind = VarBind.new(ObjectId.new("1.3.6.1.2.1.1.3.0"),
                                      TimeTicks.new(1234))

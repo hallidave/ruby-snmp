@@ -494,9 +494,9 @@ class Manager
 end
 
 class UDPServerTransport
-    def initialize(port)
+    def initialize(host, port)
         @socket = UDPSocket.open
-        @socket.bind('localhost', port)
+        @socket.bind(host, port)
     end
     
     def close
@@ -531,6 +531,7 @@ end
 #
 class TrapListener
     DefaultConfig = {
+        :Host => 'localhost',
         :Port => 162,
         :Community => 'public',
         :ServerTransport => UDPServerTransport,
@@ -554,7 +555,7 @@ class TrapListener
     #
     def initialize(config={}, &block)
         @config = DefaultConfig.dup.update(config)
-        @transport = @config[:ServerTransport].new(@config[:Port])
+        @transport = @config[:ServerTransport].new(@config[:Host], @config[:Port])
         @max_bytes = @config[:MaxReceiveBytes]
         @handler_init = block
         @oid_handler = {}

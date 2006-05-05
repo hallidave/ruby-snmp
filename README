@@ -25,6 +25,11 @@ examples below for more details.
 
 == Changes
 
+Changes for version 1.0.1:
+
+* Made the host configurable for the TrapListener.  Previously defaulted
+  to 'localhost'.
+
 Changes for version 1.0.0:
 
 * Added to_s method to TimeTicks.  Displays time in human-readable form
