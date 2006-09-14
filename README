@@ -9,13 +9,13 @@ that Ruby can run.
 
 See snmplib.rubyforge.org[http://snmplib.rubyforge.org/] for more info.
 
-Version 0.6.0 of this software supports the following:
+Version 1.0.0 of this software supports the following:
 
 * The GetRequest, GetNextRequest, GetBulkRequest, SetRequest, Response
   SNMPv1_Trap, SNMPv2_Trap, and Inform PDUs
 * All of the ASN.1 data types defined by SNMPv1 and SNMPv2c
 * Sending informs and v1 and v2 traps
-* Trap handling for v1 and v2 traps
+* Trap handling for informs and v1 and v2 traps
 * Symbolic OID values (ie. "ifTable" instead of "1.3.6.1.2.1.2.2") as   
   parameters to the SNMP.Manager API
 * Includes symbol data files for all current IETF MIBs 
@@ -25,9 +25,21 @@ examples below for more details.
 
 == Changes
 
+Changes for version 1.0.1:
+
+* Made the host configurable for the TrapListener.  Previously defaulted
+  to 'localhost'.
+
+Changes for version 1.0.0:
+
+* Added to_s method to TimeTicks.  Displays time in human-readable form
+  instead of just a number.  The to_i method can still be used to get the
+  number of ticks.
+
 Changes for version 0.6.1:
 
-* Made decoding of unsigned integers more liberal, so that they are interpreted as positive integers even if the high bit is set.
+* Made decoding of unsigned integers more liberal, so that they are  
+  interpreted as positive integers even if the high bit is set.
 * Added support for receiving InformRequest PDUs from the TrapListener class.
 
 Changes for version 0.6.0:
@@ -102,19 +114,19 @@ formats.
 From the .gem file you can install using
 RubyGems[http://rubyforge.org/projects/rubygems].
 
-  gem install snmp-0.6.0.gem
+  gem install snmp-1.0.0.gem
 
 From the .tgz or .zip file you can install using
 setup.rb[http://i.loveruby.net/en/prog/setup.html].  Uncompress the archive
 and then run setup.
 
-  cd snmp-0.6.0
+  cd snmp-1.0.0
   ruby setup.rb (may require root privilege)  
 
 == Testing
 
 This library has received limited testing:
-* The unit tests have been executed with Ruby 1.8.3 on Mac OS X 10.4.
+* The unit tests have been executed with Ruby 1.8.4 on Mac OS X 10.4.
 * Basic interoperability testing has been done with the
   net-snmp[http://www.net-snmp.org/] tools.
 

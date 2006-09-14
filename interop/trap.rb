@@ -8,7 +8,7 @@ include SNMP
 
 def setup
     @queue = Queue.new
-    @manager = TrapListener.new(:Port => 1062) do |manager|
+    @manager = TrapListener.new(:Host => 'localhost', :Port => 1062) do |manager|
         manager.on_trap_default do |trap|
             @queue << trap
         end
@@ -36,6 +36,15 @@ def test_v2c_trap
     assert(trap.kind_of?(SNMPv2_Trap))
     assert_equal(1234, trap.sys_up_time)
     assert_equal("1.3.6.1.6.3.1.1.5.3", trap.trap_oid.to_s)
+    assert_equal(5, trap.varbind_list.length)
+end
+
+def test_inform
+    system("snmpinform -v 2c -c public localhost:1062 2176117721 linkUp ifIndex.1 i 1 ifAdminStatus.1 i 2 ifOperStatus.1 i 6")
+    trap = next_trap
+    assert(trap.kind_of?(InformRequest))
+    assert_equal(2176117721, trap.sys_up_time)
+    assert_equal("1.3.6.1.6.3.1.1.5.4", trap.trap_oid.to_s)
     assert_equal(5, trap.varbind_list.length)
 end
 

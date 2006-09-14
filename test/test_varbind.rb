@@ -319,7 +319,7 @@ class TestVarBind < Test::Unit::TestCase
             assert_equal(type.asn1_type, type.to_s)
         end
     end
-    
+
     def test_timeticks
         assert_equal("00:00:00.00", TimeTicks.new(0).to_s)
         assert_equal("00:00:00.01", TimeTicks.new(1).to_s)

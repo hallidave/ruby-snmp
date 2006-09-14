@@ -9,12 +9,67 @@
 
 require 'snmp/pdu'
 require 'snmp/mib'
-require 'snmp/base'
 require 'socket'
 require 'timeout'
+require 'thread'
 
 module SNMP
 
+class RequestTimeout < RuntimeError; end
+
+##
+# Wrap socket so that it can be easily substituted for testing or for
+# using other transport types (e.g. TCP)
+#
+class UDPTransport
+    def initialize
+        @socket = UDPSocket.open
+    end
+
+    def close
+        @socket.close
+    end
+
+    def send(data, host, port)
+        @socket.send(data, 0, host, port)
+    end
+
+    def recv(max_bytes)
+        @socket.recv(max_bytes)
+    end
+end
+
+##
+# Manage a request-id in the range 1..2**31-1
+#
+class RequestId
+    MAX_REQUEST_ID = 2**31
+    
+    def initialize
+        @lock = Mutex.new
+        @request_id = rand(MAX_REQUEST_ID)
+    end
+
+    def next
+        @lock.synchronize do
+            @request_id += 1
+            @request_id = 1 if @request_id == MAX_REQUEST_ID
+            return  @request_id
+        end
+    end
+    
+    def force_next(next_id)
+        new_request_id = next_id.to_i
+        if new_request_id < 1 || new_request_id >= MAX_REQUEST_ID
+            raise "Invalid request id: #{new_request_id}"
+        end
+        new_request_id = MAX_REQUEST_ID if new_request_id == 1
+        @lock.synchronize do
+            @request_id = new_request_id - 1
+        end
+    end
+end
+    
 ##
 # == SNMP Manager
 #
@@ -59,7 +114,7 @@ module SNMP
 #                     :MibModules => ["MY-MODULE-MIB", "SNMPv2-MIB", ...])
 #
 
-class Manager < ManagerBase
+class Manager
 
     ##
     # Default configuration.  Individual options may be overridden when
@@ -81,8 +136,17 @@ class Manager < ManagerBase
 
     @@request_id = RequestId.new
     
-    def initialize(config = {}) 
-        super()
+    ##
+    # Retrieves the current configuration of this Manager.
+    #
+    attr_reader :config
+    
+    ##
+    # Retrieves the MIB for this Manager.
+    #
+    attr_reader :mib
+    
+    def initialize(config = {})
         if block_given?
             warn "SNMP::Manager::new() does not take block; use SNMP::Manager::open() instead"
         end
@@ -98,6 +162,7 @@ class Manager < ManagerBase
         @retries = @config[:Retries]
         @transport = @config[:Transport].new 
         @max_bytes = @config[:MaxReceiveBytes]
+        @mib = MIB.new
         load_modules(@config[:MibModules], @config[:MibDir])
     end
     
@@ -224,15 +289,15 @@ class Manager < ManagerBase
     #
     # For example:
     #
-    #   SNMP::Manager.open(:Version => :SNMPv1) do |snmp|
+    #   Manager.open(:Version => :SNMPv1) do |snmp|
     #     snmp.trap_v1(
     #       "enterprises.9",
     #       "10.1.2.3",
     #       :enterpriseSpecific,
     #        42,
     #       12345,
-    #       [SNMP::VarBind.new("1.3.6.1.2.3.4", SNMP::Integer.new(1))])
-    #   end
+    #       [VarBind.new("1.3.6.1.2.3.4", Integer.new(1))])
+    #  end
     #
     def trap_v1(enterprise, agent_addr, generic_trap, specific_trap, timestamp, object_list=[])
         vb_list = @mib.varbind_list(object_list, :KeepValue)
@@ -388,6 +453,10 @@ class Manager < ManagerBase
         Kernel::warn "#{location}: warning: #{message}"
     end
     
+    def load_modules(module_list, mib_dir)
+        module_list.each { |m| @mib.load_module(m, mib_dir) }
+    end
+    
     def try_request(request, community=@community, host=@host, port=@port)
         (@retries + 1).times do |n|
             send_request(request, community, host, port)
@@ -425,26 +494,31 @@ class Manager < ManagerBase
 end
 
 class UDPServerTransport
-    def initialize(port)
+    def initialize(host, port)
         @socket = UDPSocket.open
-        @socket.bind('localhost', port)
+        @socket.bind(host, port)
     end
     
     def close
         @socket.close
     end
+
+    def send(data, host, port)
+        @socket.send(data, 0, host, port)
+    end
     
     def recvfrom(max_bytes)
         data, host_info = @socket.recvfrom(max_bytes)
-        flags, host_socket, host_name, host_ip = host_info
-        return data, host_ip
+        flags, host_port, host_name, host_ip = host_info
+        return data, host_ip, host_port
     end
 end
 
 ##
 # == SNMP Trap Listener
 #
-# Listens to a socket and processes received traps in a separate thread.
+# Listens to a socket and processes received traps and informs in a separate
+# thread.
 #
 # === Example
 #
@@ -457,6 +531,7 @@ end
 #
 class TrapListener
     DefaultConfig = {
+        :Host => 'localhost',
         :Port => 162,
         :Community => 'public',
         :ServerTransport => UDPServerTransport,
@@ -480,7 +555,7 @@ class TrapListener
     #
     def initialize(config={}, &block)
         @config = DefaultConfig.dup.update(config)
-        @transport = @config[:ServerTransport].new(@config[:Port])
+        @transport = @config[:ServerTransport].new(@config[:Host], @config[:Port])
         @max_bytes = @config[:MaxReceiveBytes]
         @handler_init = block
         @oid_handler = {}
@@ -522,7 +597,9 @@ class TrapListener
     
     ##
     # Define a trap handler block for all SNMPv2c traps.  The trap yielded
-    # to the block will always be an SNMPv2_Trap.
+    # to the block will always be an SNMPv2_Trap.  Note that InformRequest
+    # is a subclass of SNMPv2_Trap, so inform PDUs are also received by
+    # this handler.
     #
     def on_trap_v2c(&block)
         raise ArgumentError, "a block must be provided" unless block
@@ -556,11 +633,14 @@ class TrapListener
     def process_traps(trap_listener)
         @handler_init.call(trap_listener) if @handler_init
         loop do
-            data, source_ip = @transport.recvfrom(@max_bytes)
+            data, source_ip, source_port = @transport.recvfrom(@max_bytes)
             begin
                 message = Message.decode(data)
                 if @config[:Community] == message.community
                     trap = message.pdu
+                    if trap.kind_of?(InformRequest)
+                        @transport.send(message.response.encode, source_ip, source_port)
+                    end
                     trap.source_ip = source_ip
                     select_handler(trap).call(trap)
                 end
