@@ -28,7 +28,6 @@ SNMP_TRAP_OID_OID = ObjectId.new("1.3.6.1.6.3.1.1.4.1.0")
 
 class Message
     attr_reader :version
-    attr_reader :community
     attr_reader :pdu
     
     class << self
@@ -36,10 +35,17 @@ class Message
             message_data, remainder = decode_sequence(data)
             assert_no_remainder(remainder)
             version, remainder = decode_version(message_data)
-            community, remainder = decode_octet_string(remainder)
-            pdu, remainder = decode_pdu(version, remainder)
-            assert_no_remainder(remainder)
-            Message.new(version, community, pdu)
+            if version == :SNMPv3
+                header_data, remainder = decode_sequence(remainder)
+                security_params, remainder = decode_octet_string(remainder)
+                raise UnsupportedVersion, version
+                # MessageV3.new(version, ...)
+            else
+                community, remainder = decode_octet_string(remainder)
+                pdu, remainder = decode_pdu(version, remainder)
+                assert_no_remainder(remainder)
+                MessageV1V2.new(version, community, pdu)
+            end
         end
 
         def decode_version(data)
@@ -48,12 +54,14 @@ class Message
                 version = :SNMPv1
             elsif version_data == SNMP_V2C
                 version = :SNMPv2c
+            elsif version_data == SNMP_V3
+                version = :SNMPv3    
             else
                 raise UnsupportedVersion, version_data.to_s
             end
             return version, remainder
         end
-        
+
         def decode_pdu(version, data)
             pdu_tag, pdu_data, remainder = decode_tlv(data)
             case pdu_tag
@@ -84,12 +92,20 @@ class Message
         end
     end
     
-    def initialize(version, community, pdu)
+    def initialize(version, pdu)
         @version = version
-        @community = community
         @pdu = pdu
     end
-    
+end
+
+class MessageV1V2 < Message
+    attr_reader :community
+
+    def initialize(version, community, pdu)
+        super(version, pdu)
+        @community = community
+    end
+
     def response
         Message.new(@version, @community, Response.from_pdu(@pdu))
     end
@@ -111,6 +127,12 @@ class Message
         encode_sequence(data)
     end
 end
+
+class MessageV3 < Message
+    def initialize(version, pdu)
+        raise "not implemented"
+    end
+end               
 
 class PDU
     attr_accessor :request_id

@@ -37,7 +37,7 @@ class TestProtocol < Test::Unit::TestCase
         list = SNMP::VarBindList.new
         list << varbind << varbind;
         pdu = SNMP::Response.new(12345, list)
-        message = SNMP::Message.new(:SNMPv2c, "public", pdu)
+        message = SNMP::MessageV1V2.new(:SNMPv2c, "public", pdu)
         assert_equal("07\002\001\001\004\006public\242*\002\00209\002\001\000\002\001\0000\0360\r\006\004+\006\211R\004\005value0\r\006\004+\006\211R\004\005value", message.encode)
     end
     
@@ -159,7 +159,7 @@ class TestProtocol < Test::Unit::TestCase
         trap = SNMPv1_Trap.new(enterprise, agent_addr, generic_trap, specific_trap, timestamp, varbinds)
         assert_equal("\244%\006\004+\006\001{@\004\001\002\003\004\002\001\002\002\001\000C\005\000\201\264\353\3310\n0\010\006\003+\006\002\002\001\001", trap.encode)
 
-        encoded = Message.new(:SNMPv1, "public", trap).encode
+        encoded = MessageV1V2.new(:SNMPv1, "public", trap).encode
         trap = Message.decode(encoded).pdu
         assert_equal(enterprise, trap.enterprise)
         assert_equal(agent_addr, trap.agent_addr)
@@ -174,7 +174,7 @@ class TestProtocol < Test::Unit::TestCase
         pdu = Response.new(2147483647, VarBindList.new, :noError, 0)
         assert_equal("\242\016\002\004\177\377\377\377\002\001\000\002\001\0000\000", pdu.encode)
         
-        encoded = Message.new(:SNMPv2c, "public", pdu).encode
+        encoded = MessageV1V2.new(:SNMPv2c, "public", pdu).encode
         pdu = Message.decode(encoded).pdu
         assert_equal(2147483647, pdu.request_id)
         assert_equal(:noError, pdu.error_status)
