@@ -25,6 +25,7 @@ class AgentServer
                     @log.info "Received #{data.length} bytes"
                     self.last_pdu = data
                     #@log.debug "Decoding message"
+                    p data
                     message = MessageFactory.new.decode(data)
                     self.last_request_id = message.pdu.request_id
                     response = message.response
