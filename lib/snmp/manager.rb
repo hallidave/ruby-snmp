@@ -7,6 +7,7 @@
 # COPYING file in the Ruby distribution for details.
 #
 
+require 'snmp/message'
 require 'snmp/pdu'
 require 'snmp/mib'
 require 'socket'
@@ -150,6 +151,7 @@ class Manager
         if block_given?
             warn "SNMP::Manager::new() does not take block; use SNMP::Manager::open() instead"
         end
+        @factory = MessageFactory.new
         @config = DefaultConfig.merge(config)
         @config[:WriteCommunity] = @config[:WriteCommunity] || @config[:Community]
         @host = @config[:Host]
@@ -474,7 +476,7 @@ class Manager
     end
     
     def send_request(request, community, host, port)
-        message = Message.new(@snmp_version, community, request)
+        message = @factory.create(request, :version => @snmp_version, :community => community)
         @transport.send(message.encode, host, port)
     end
     
@@ -486,7 +488,7 @@ class Manager
     def get_response(request)
         begin
             data = @transport.recv(@max_bytes)
-            message = Message.decode(data)
+            message = @factory.decode(data)
             response = message.pdu
         end until request.request_id == response.request_id
         response
@@ -554,6 +556,7 @@ class TrapListener
     # 3. default handler
     #
     def initialize(config={}, &block)
+        @factory = MessageFactory.new
         @config = DefaultConfig.dup.update(config)
         @transport = @config[:ServerTransport].new(@config[:Host], @config[:Port])
         @max_bytes = @config[:MaxReceiveBytes]
@@ -635,7 +638,7 @@ class TrapListener
         loop do
             data, source_ip, source_port = @transport.recvfrom(@max_bytes)
             begin
-                message = Message.decode(data)
+                message = @factory.decode(data)
                 if @config[:Community] == message.community
                     trap = message.pdu
                     if trap.kind_of?(InformRequest)

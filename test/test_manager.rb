@@ -13,7 +13,7 @@ class EchoTransport
     end
     
     def recv(max_bytes)
-        SNMP::Message.decode(@data).response.encode[0,max_bytes]
+        SNMP::MessageFactory.new.decode(@data).response.encode[0,max_bytes]
     end
 end
 
@@ -23,6 +23,7 @@ class TestManager < Test::Unit::TestCase
     
     def setup
         @manager = Manager.new(:Transport => EchoTransport)
+        @factory = MessageFactory.new
     end
     
     def teardown
@@ -134,7 +135,7 @@ class TestManager < Test::Unit::TestCase
             12345,
             [VarBind.new("1.3.6.1.2.3.4", Integer.new(1))]
         )
-        pdu = Message.decode(sent_data).pdu
+        pdu = @factory.decode(sent_data).pdu
         assert_equal(ObjectId.new("1.3.6.1.4.1.9"), pdu.enterprise)
         assert_equal(IpAddress.new("10.1.2.3"), pdu.agent_addr)
         assert_equal(:enterpriseSpecific, pdu.generic_trap)
@@ -145,13 +146,13 @@ class TestManager < Test::Unit::TestCase
     
     def test_trap_v2
         sent_data = @manager.trap_v2(1234, "1.3.6.1.2.3.4")
-        pdu = Message.decode(sent_data).pdu
+        pdu = @factory.decode(sent_data).pdu
         assert_equal(1234, pdu.sys_up_time)
         assert_equal("1.3.6.1.2.3.4", pdu.trap_oid.to_s) 
         assert_equal(2, pdu.vb_list.length)
 
         sent_data = @manager.trap_v2(1234, "1.3.6.1.2.3.4", ["1.2.3", "1.4.5.6"])
-        pdu = Message.decode(sent_data).pdu
+        pdu = @factory.decode(sent_data).pdu
         assert_equal(1234, pdu.sys_up_time)
         assert_equal("1.3.6.1.2.3.4", pdu.trap_oid.to_s) 
         assert_equal(4, pdu.vb_list.length) 

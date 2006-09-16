@@ -32,6 +32,7 @@ end
 class MismatchIdTransport
     def initialize
         @data = []
+        @factory = MessageFactory.new
     end
     
     def close
@@ -39,7 +40,7 @@ class MismatchIdTransport
     
     def send(data, host, port)
         bad_id_data = data.dup
-        bad_msg = Message.decode(data)
+        bad_msg = @factory.decode(data)
         bad_msg.pdu.request_id -= 3  # corrupt request_id  
         @data << bad_msg.encode # insert corrupted PDU before real data
         @data << data
@@ -47,7 +48,7 @@ class MismatchIdTransport
     
     def recv(max_bytes)
         raise "receive queue is empty" unless @data.first
-        SNMP::Message.decode(@data.shift).response.encode[0,max_bytes]
+        @factory.decode(@data.shift).response.encode[0,max_bytes]
     end
 end
 
