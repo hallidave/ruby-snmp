@@ -28,10 +28,19 @@ class TestMessage < Test::Unit::TestCase
         assert_equal(SNMP::Null, varbind_list.first.value)
     end
     
-    def test_message_decoder_v3
-        assert_raise(SNMP::UnsupportedVersion) do
-            message = @factory.decode("0>\002\001\0030\021\002\004&\266\342\314\002\003\000\377\343\004\001\004\002\001\003\004\0200\016\004\000\002\001\000\002\001\000\004\000\004\000\004\0000\024\004\000\004\000\240\016\002\004\v\3623\233\002\001\000\002\001\0000\000")
-        end
+    def test_message_decode_v3
+        message = @factory.decode("0>\002\001\0030\021\002\004Q\004\242\325\002\003\000\377\343\004\001\004\002\001\003\004\0200\016\004\000\002\001\000\002\001\000\004\000\004\000\004\0000\024\004\000\004\000\240\016\002\004Q\000CR\002\001\000\002\001\0000\000")
+        assert_equal(:SNMPv3, message.version)
+        assert_equal(1359258325, message.request_id)
+        assert_equal(65507, message.max_size) 
+        assert(!message.auth?)
+        assert(!message.priv?)
+        assert(message.reportable?)
+        assert_equal(3, message.security_model)
+        assert_equal("0\016\004\000\002\001\000\002\001\000\004\000\004\000\004\000", message.security_params)
+        assert_equal("", message.context_engine_id)
+        assert_equal("", message.context_name)
+        assert_equal(SNMP::GetRequest, message.pdu.class)
     end
     
     def test_encode_message

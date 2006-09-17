@@ -11,6 +11,8 @@ require 'snmp/ber'
 require 'snmp/pdu'
 
 module SNMP
+
+class InvalidMsgFlags < RuntimeError; end
     
 class MessageFactory
     def create(pdu, options)
@@ -31,9 +33,12 @@ class MessageFactory
         version, remainder = decode_version(message_data)
         if version == :SNMPv3
             header_data, remainder = decode_sequence(remainder)
+            header = decode_v3_header(header_data)
             security_params, remainder = decode_octet_string(remainder)
-            raise UnsupportedVersion, version
-            # MessageV3.new(version, ...)
+            pdu_data, remainder = decode_sequence(remainder)
+            context_engine_id, context_name, pdu = decode_scoped_pdu(version, pdu_data)
+            assert_no_remainder(remainder)
+            MessageV3.new(header, security_params, context_engine_id, context_name, pdu)
         else
             community, remainder = decode_octet_string(remainder)
             pdu, remainder = decode_pdu(version, remainder)
@@ -55,7 +60,24 @@ class MessageFactory
         end
         return version, remainder
     end
-
+    
+    def decode_v3_header(data)
+        id, remainder = decode_integer(data)
+        max_size, remainder = decode_integer(remainder)
+        flags, remainder = decode_octet_string(remainder)
+        security_model, remainder = decode_integer(remainder)
+        assert_no_remainder(remainder)
+        return MessageV3Header.new(id, max_size, flags, security_model)
+    end
+    
+    def decode_scoped_pdu(version, data)
+        context_engine_id, remainder = decode_octet_string(data)
+        context_name, remainder = decode_octet_string(remainder)
+        pdu, remainder = decode_pdu(version, remainder)
+        assert_no_remainder(remainder)
+        return context_engine_id, context_name, pdu
+    end
+        
     def decode_pdu(version, data)
         pdu_tag, pdu_data, remainder = decode_tlv(data)
         case pdu_tag
@@ -119,7 +141,62 @@ class Message
     end
 end
 
-class MessageV3
+class MessageV3Header < Struct.new(:request_id, :max_size, :flags, :security_model)
+    def initialize(*args)
+        super
+        raise InvalidMessageFlags, "size of msgFlags must be one octet" if self.flags.size != 1
+    end
+    
+    def auth
+        self.flags[0] & 0x01 == 0x01
+    end
+    
+    def priv
+        self.flags[0] & 0x02 == 0x02
+    end
+    
+    def reportable
+        self.flags[0] & 0x04 == 0x04
+    end
+end
+
+class MessageV3 
+    attr_reader :request_id
+    attr_reader :max_size
+    attr_reader :security_model
+    attr_reader :security_params
+    attr_reader :context_engine_id
+    attr_reader :context_name
+    attr_reader :pdu
+                         
+    def initialize(header, security_params, context_engine_id, context_name, pdu)
+        @request_id = header.request_id
+        @max_size = header.max_size
+        @auth = header.auth
+        @priv = header.priv
+        @reportable = header.reportable
+        @security_model = header.security_model
+        @security_params = security_params
+        @context_engine_id = context_engine_id
+        @context_name = context_name
+        @pdu = pdu
+    end
+    
+    def version
+        :SNMPv3
+    end
+    
+    def auth?
+        @auth
+    end
+    
+    def priv?
+        @priv
+    end
+    
+    def reportable?
+        @reportable
+    end
 end               
 
 end # module SNMP
