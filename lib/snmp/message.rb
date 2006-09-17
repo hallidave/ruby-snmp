@@ -13,8 +13,12 @@ require 'snmp/pdu'
 module SNMP
 
 class InvalidMsgFlags < RuntimeError; end
+class UnsupportedSecurityModel < RuntimeError; end
     
 class MessageFactory
+    
+    USM_SECURITY_MODEL = 3
+    
     def create(pdu, options)
         version = options[:version]
         raise ArgumentError, "missing ':version' option" unless version
@@ -34,11 +38,14 @@ class MessageFactory
         if version == :SNMPv3
             header_data, remainder = decode_sequence(remainder)
             header = decode_v3_header(header_data)
+            sm = header.security_model
+            raise UnsupportedSecurityModel, "unknown model: #{sm}" if sm != USM_SECURITY_MODEL
             security_params, remainder = decode_octet_string(remainder)
+            security_model = USM.decode(security_params)
             pdu_data, remainder = decode_sequence(remainder)
             context_engine_id, context_name, pdu = decode_scoped_pdu(version, pdu_data)
             assert_no_remainder(remainder)
-            MessageV3.new(header, security_params, context_engine_id, context_name, pdu)
+            MessageV3.new(header, security_model, context_engine_id, context_name, pdu)
         else
             community, remainder = decode_octet_string(remainder)
             pdu, remainder = decode_pdu(version, remainder)
@@ -142,21 +149,26 @@ class Message
 end
 
 class MessageV3Header < Struct.new(:request_id, :max_size, :flags, :security_model)
+
+    AUTH_BIT_MASK = 0x01
+    PRIV_BIT_MASK = 0x02
+    REPORTABLE_BIT_MASK = 0x04
+    
     def initialize(*args)
         super
         raise InvalidMessageFlags, "size of msgFlags must be one octet" if self.flags.size != 1
     end
     
     def auth
-        self.flags[0] & 0x01 == 0x01
+        self.flags[0] & AUTH_BIT_MASK == AUTH_BIT_MASK
     end
     
     def priv
-        self.flags[0] & 0x02 == 0x02
+        self.flags[0] & PRIV_BIT_MASK == PRIV_BIT_MASK
     end
     
     def reportable
-        self.flags[0] & 0x04 == 0x04
+        self.flags[0] & REPORTABLE_BIT_MASK == REPORTABLE_BIT_MASK
     end
 end
 
@@ -164,19 +176,17 @@ class MessageV3
     attr_reader :request_id
     attr_reader :max_size
     attr_reader :security_model
-    attr_reader :security_params
     attr_reader :context_engine_id
     attr_reader :context_name
     attr_reader :pdu
                          
-    def initialize(header, security_params, context_engine_id, context_name, pdu)
+    def initialize(header, security_model, context_engine_id, context_name, pdu)
         @request_id = header.request_id
         @max_size = header.max_size
         @auth = header.auth
         @priv = header.priv
         @reportable = header.reportable
-        @security_model = header.security_model
-        @security_params = security_params
+        @security_model = security_model
         @context_engine_id = context_engine_id
         @context_name = context_name
         @pdu = pdu
@@ -198,5 +208,19 @@ class MessageV3
         @reportable
     end
 end               
+
+class USM < Struct.new(:engine_id, :engine_boots, :engine_time, :user_name, :auth_params, :priv_params)
+    def self.decode(data)
+        seq_data, remainder = decode_sequence(data)
+        engine_id, remainder = decode_octet_string(seq_data)
+        engine_boots, remainder = decode_integer(remainder)
+        engine_time, remainder = decode_integer(remainder)
+        user_name, remainder = decode_octet_string(remainder)
+        auth_params, remainder = decode_octet_string(remainder)
+        priv_params, remainder = decode_octet_string(remainder)
+        assert_no_remainder(remainder) 
+        USM.new(engine_id, engine_boots, engine_time, user_name, auth_params, priv_params)
+   end
+end
 
 end # module SNMP
