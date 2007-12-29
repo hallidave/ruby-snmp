@@ -29,11 +29,17 @@ class VarBindList < Array
 
     def initialize(varbind_list=[])
         super()
-        varbind_list.each do |item|
-            if item.respond_to? :to_str
-                self << ObjectId.new(item.to_str).to_varbind
-            else
-                self << item.to_varbind
+        if varbind_list.respond_to? :to_str
+            self << ObjectId.new(varbind_list.to_str).to_varbind
+        elsif varbind_list.respond_to? :to_varbind
+            self << varbind_list.to_varbind
+        else
+            varbind_list.each do |item|
+                if item.respond_to? :to_str
+                    self << ObjectId.new(item.to_str).to_varbind
+                else
+                    self << item.to_varbind
+                end
             end
         end
     end

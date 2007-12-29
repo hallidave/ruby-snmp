@@ -35,11 +35,11 @@ class TestMib < Test::Unit::TestCase
             @mib.oid("IF-MIB::")
         } 
         
-        assert_raise(MIB::ModuleNotLoadedError) {
+        assert_raise(ArgumentError) {
            MIB.new.oid("sysDescr.0")
         }
         
-        assert_equal("1.2.3.4", MIB.new.oid("1.2.3.4"))
+        assert_equal("1.2.3.4", MIB.new.oid("1.2.3.4").to_s)
     end
     
     def test_varbind_list

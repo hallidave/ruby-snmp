@@ -8,6 +8,17 @@
 #
 
 #
+# Add ord method to Fixnum for forward compatibility with Ruby 1.9
+#
+if "a"[0].kind_of? Fixnum
+    unless Fixnum.methods.include? :ord
+        class Fixnum
+            def ord; self; end
+        end
+    end
+end
+
+#
 # This module implements methods for encoding and decoding SNMP packets
 # using the ASN.1 BER (Basic Encoding Rules).
 #
@@ -84,9 +95,9 @@ module BER #:nodoc:all
     # multi-byte).
     #
     def decode_tlv(data)
-        raise OutOfData if (data.length == 2 && data[1] != 0) || data.length < 2
-        tag = data[0]
-        length = data[1]
+        raise OutOfData if (data.length == 2 && data[1].ord != 0) || data.length < 2
+        tag = data[0].ord
+        length = data[1].ord
         if length < 0x80
             value = data[2, length]
             remainder = data[length+2..-1]
@@ -122,7 +133,7 @@ module BER #:nodoc:all
     
     def decode_integer_value(value)
         result = build_integer(value, 0, value.length)
-        if value[0][7] == 1
+        if value[0].ord[7] == 1
             result -= (1 << (8 * value.length))
         end
         result
@@ -139,7 +150,7 @@ module BER #:nodoc:all
     
     def build_integer(data, start, num_octets)
         number = 0
-        num_octets.times { |i| number = number<<8 | data[start+i] }
+        num_octets.times { |i| number = number<<8 | data[start+i].ord }
         return number
     end
 
@@ -197,18 +208,19 @@ module BER #:nodoc:all
         if value.length == 0
             object_id = []
         else
-            if value[0] == 0x2b
+            value0 = value[0].ord
+            if value0 == 0x2b
                 object_id = [1,3]
             else
-                second = value[0] % 40
-                first = (value[0] - second) / 40
+                second = value0 % 40
+                first = (value0 - second) / 40
                 raise InvalidObjectId, value.to_s if first > 2
                 object_id = [first, second]
             end
             n = 0
             for i in 1...value.length
-                n = (n<<7) + (value[i] & 0x7f)
-                if value[i] < 0x80
+                n = (n<<7) + (value[i].ord & 0x7f)
+                if value[i].ord < 0x80
                     object_id << n
                     n = 0
                 end 
@@ -243,9 +255,9 @@ module BER #:nodoc:all
             data = value.chr
         else
             data = integer_to_octets(value)
-            if value > 0 && data[0] > 0x7f
+            if value > 0 && data[0].ord > 0x7f
                 data = "\000" << data 
-            elsif value < 0 && data[0] < 0x80
+            elsif value < 0 && data[0].ord < 0x80
                 data = "\377" << data
             end
         end
@@ -326,7 +338,7 @@ module BER #:nodoc:all
                         octets = (n & 0x7f | 0x80).chr << octets
                         n = n >> 7
                     end until n == 0
-                    octets[-1] &= 0x7f
+                    octets[-1] = (octets[-1].ord & 0x7f).chr
                     data << octets
                 end
             end
