@@ -227,7 +227,6 @@ class MIB
     # optional.
     # 
     def oid(name)
-        raise ModuleNotLoadedError, "no modules have been loaded" if @by_name.size == 0
         module_parts = name.to_str.split("::")
         if module_parts.length == 1
             parse_oid(@by_name, name.to_str)

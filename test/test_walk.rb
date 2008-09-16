@@ -35,7 +35,7 @@ class YamlDataTransport
     end
     
     def send(data, host, port)
-        msg = MessageFactory.new.decode(data) 
+        msg = Message.decode(data) 
         req_class = msg.pdu.class
         if req_class == SNMP::GetRequest
             oid_map = @@get_map
