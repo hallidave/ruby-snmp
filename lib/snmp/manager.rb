@@ -160,7 +160,8 @@ class Manager
         @snmp_version = @config[:Version]
         @timeout = @config[:Timeout]
         @retries = @config[:Retries]
-        @transport = @config[:Transport].new 
+        transport = @config[:Transport]
+        @transport = transport.respond_to?(:new) ? transport.new : transport 
         @max_bytes = @config[:MaxReceiveBytes]
         @mib = MIB.new
         load_modules(@config[:MibModules], @config[:MibDir])
@@ -461,7 +462,7 @@ class Manager
         (@retries + 1).times do |n|
             send_request(request, community, host, port)
             begin
-                timeout(@timeout) do
+                Timeout.timeout(@timeout) do
                     return get_response(request)
                 end
             rescue Timeout::Error

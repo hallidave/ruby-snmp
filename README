@@ -9,7 +9,7 @@ that Ruby can run.
 
 See snmplib.rubyforge.org[http://snmplib.rubyforge.org/] for more info.
 
-Version 1.0.2 of this software supports the following:
+Version 1.0.3 of this software supports the following:
 
 * The GetRequest, GetNextRequest, GetBulkRequest, SetRequest, Response
   SNMPv1_Trap, SNMPv2_Trap, and Inform PDUs
@@ -26,6 +26,12 @@ examples below for more details.
 
 == Changes
 
+Changes for version 1.0.3:
+
+* Minor changes to Manager class.  The :Transport option may now be an
+object or a class.  Explicity call Timeout.timeout so that a timeout
+method may be defined in subclasses.  Thanks to Eric Monti.
+ 
 Changes for version 1.0.2:
 
 * Internal code changes to make this library compatible with both Ruby 1.8
@@ -121,13 +127,13 @@ formats.
 From the .gem file you can install using
 RubyGems[http://rubyforge.org/projects/rubygems].
 
-  gem install snmp-1.0.2.gem
+  gem install snmp-1.0.3.gem
 
 From the .tgz or .zip file you can install using
 setup.rb[http://i.loveruby.net/en/prog/setup.html].  Uncompress the archive
 and then run setup.
 
-  cd snmp-1.0.2
+  cd snmp-1.0.3
   ruby setup.rb (may require root privilege)  
 
 == Testing
@@ -238,7 +244,7 @@ Log traps to STDOUT.
    
 == License
 
-This SNMP Library is Copyright (c) 2004-2007 by David R. Halliday.  It is free
+This SNMP Library is Copyright (c) 2004-2010 by David R. Halliday.  It is free
 software.  Redistribution is permitted under the same terms and conditions as
 the standard Ruby distribution.  See the COPYING file in the Ruby distribution
 for details.

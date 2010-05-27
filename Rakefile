@@ -10,7 +10,7 @@ Rake::TestTask.new do |test|
 end
 
 # package target
-PKG_VERSION = '1.0.2'
+PKG_VERSION = '1.0.3'
 PKG_FILES = FileList[
     'Rakefile',
     'README',

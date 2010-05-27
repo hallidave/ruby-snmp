@@ -49,7 +49,13 @@ class TestManager < Test::Unit::TestCase
         assert_equal('test', @manager.config[:Community])
         assert_equal('private', @manager.config[:WriteCommunity])
     end
-
+    
+    def test_transport_instance
+        @manager = Manager.new(:Transport => EchoTransport.new)
+        response = @manager.get("1.2.3.4")
+        assert_equal("1.2.3.4", response.varbind_list.first.name.to_s)
+    end
+    
     def test_get
         response = @manager.get("1.2.3.4")
         assert_equal("1.2.3.4", response.varbind_list.first.name.to_s)
