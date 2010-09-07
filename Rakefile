@@ -13,7 +13,7 @@ end
 PKG_VERSION = '1.0.3'
 PKG_FILES = FileList[
     'Rakefile',
-    'README',
+    'README.rdoc',
     'setup.rb',
     'lib/**/*.rb',
     'test/**/test*.rb',
@@ -32,8 +32,8 @@ spec = Gem::Specification.new do |s|
     s.version = PKG_VERSION
     s.files = PKG_FILES.to_a
     s.has_rdoc = true
-    s.extra_rdoc_files = ['README']    
-    s.rdoc_options << '--main' << 'README' <<
+    s.extra_rdoc_files = ['README.rdoc']    
+    s.rdoc_options << '--main' << 'README.rdoc' <<
                       '--title' << 'SNMP Library for Ruby'
     s.description = "A Ruby implementation of SNMP (the Simple Network Management Protocol)."
     s.author = 'Dave Halliday'
@@ -50,11 +50,12 @@ end
 # rdoc, clobber_rdoc, rerdoc targets
 Rake::RDocTask.new do |doc|
     doc.rdoc_dir = "doc"
-    doc.main = "README"
-    doc.rdoc_files.include('README', 'lib/**/*.rb')
+    doc.main = "README.rdoc"
+    doc.rdoc_files.include('README.rdoc', 'lib/**/*.rb')
     doc.title = "SNMP Library for Ruby"
 end 
 
+desc "Generate website content"
 task :web => :rdoc do
     require 'web/generate'  
 end
