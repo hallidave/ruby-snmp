@@ -24,8 +24,8 @@ class TestVarBind < Test::Unit::TestCase
 
     def test_varbind_name_alias_oid
         vb = VarBind.new("1.2.3.4", OctetString.new("blah"))
-        assert(ObjectId.new("1.2.3.4"), vb.name)
-        assert(ObjectId.new("1.2.3.4"), vb.oid)
+        assert_equal(ObjectId.new("1.2.3.4"), vb.name)
+        assert_equal(ObjectId.new("1.2.3.4"), vb.oid)
     end
     
     def test_varbind_list_create
@@ -170,9 +170,9 @@ class TestVarBind < Test::Unit::TestCase
         id1 = ObjectId.new("1.3.3.4")
         id2 = ObjectId.new("1.3.3.4.1")
         id3 = ObjectId.new("1.3.3.4.1.2")
-        assert(ObjectId.new("1"), id2.index(id1))
-        assert(ObjectId.new("1.2"), id3.index(id1))
-        assert(ObjectId.new("1.2"), id3.index("1.3.3.4"))
+        assert_equal(ObjectId.new("1"), id2.index(id1))
+        assert_equal(ObjectId.new("1.2"), id3.index(id1))
+        assert_equal(ObjectId.new("1.2"), id3.index("1.3.3.4"))
         assert_raise(ArgumentError) { id1.index(id3) }
         assert_raise(ArgumentError) { id1.index(id1) } 
     end
@@ -219,8 +219,8 @@ class TestVarBind < Test::Unit::TestCase
     end
     
     def test_integer_to_oid
-        assert(ObjectId.new("123"), Integer.new(123).to_oid)
-        assert(ObjectId.new("0"), Integer.new(0).to_oid)
+        assert_equal(ObjectId.new("123"), Integer.new(123).to_oid)
+        assert_equal(ObjectId.new("0"), Integer.new(0).to_oid)
         
         i = Integer.new(-1)
         assert_raise(RangeError) { i.to_oid }
