@@ -230,7 +230,7 @@ module SNMP
   class IpAddress
     class << self
       def decode(value_data)
-        IpAddress.new(value_data)
+        IpAddress.new(value_data, false)
       end
     end
 
@@ -241,14 +241,17 @@ module SNMP
     ##
     # Create an IpAddress object.  The constructor accepts either a raw
     # four-octet string or a formatted string of integers separated by dots
-    # (i.e. "10.1.2.3").
+    # (i.e. "10.1.2.3").  Validation of the format can be disabled by setting
+    # the 'validate' flag to false.
     #
-    def initialize(value_data)
+    def initialize(value_data, validate=true)
       ip = value_data.to_str
-      if ip.length > 4
-        ip = parse_string(ip)
-      elsif ip.length != 4
-        raise InvalidIpAddress, "Expected 4 octets or formatted string, got #{value_data.inspect}"
+      if (validate)
+        if ip.length > 4
+          ip = parse_string(ip)
+        elsif ip.length != 4
+          raise InvalidIpAddress, "Expected 4 octets or formatted string, got #{value_data.inspect}"
+        end
       end
       @value = ip
     end
@@ -298,12 +301,14 @@ module SNMP
     private
       def parse_string(ip_string)
         parts = ip_string.split(".")
-        raise InvalidIpAddress, ip_string.inspect if parts.length != 4
+        if parts.length != 4
+          raise InvalidIpAddress, "Expected four octets separated by dots, not #{ip_string.inspect}"
+        end
         value_data = ""
         parts.each do |s|
           octet = s.to_i
-          raise InvalidIpAddress, ip_string.inspect if octet > 255
-          raise InvalidIpAddress, ip_string.inspect if octet < 0
+          raise InvalidIpAddress, "Octets cannot be greater than 255: #{ip_string.inspect}" if octet > 255
+          raise InvalidIpAddress, "Octets cannot be negative: #{ip_string.inspect}" if octet < 0
           value_data << octet.chr
         end
         value_data

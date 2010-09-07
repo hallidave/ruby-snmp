@@ -253,6 +253,17 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal("1.2.3.4", ip.to_s)
   end
 
+  def test_ip_address_decode_extra_octets
+    ip = IpAddress.decode("\000\000\000\000\000\000\000\000")
+    assert_equal("0.0.0.0.0.0.0.0", ip.to_s)
+
+    ip = IpAddress.decode("\001\002\003")
+    assert_equal("1.2.3", ip.to_s)
+
+    ip = IpAddress.decode("\001\002\003\004\005")
+    assert_equal("1.2.3.4.5", ip.to_s)
+  end
+
   def test_ip_address_equals
     ip1 = IpAddress.new("1.2.3.4")
     ip2 = IpAddress.new("1.2.3.4")
