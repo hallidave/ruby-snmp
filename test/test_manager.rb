@@ -17,6 +17,44 @@ class EchoTransport
   end
 end
 
+class TestConfig < Test::Unit::TestCase
+
+  include SNMP
+
+  def test_new_style_symbols
+    config = Manager::Config.new(:host => "test")
+    assert_equal("test", config.host)
+  end
+
+  def test_defaults
+    config = Manager::Config.new({})
+    assert_equal("localhost", config.host)
+  end
+
+  def test_old_style_symbols
+    config = Manager::Config.new(:Transport => "transport")
+    assert_equal("transport", config.transport)
+  end
+
+  def test_invalid_option
+    assert_raise(RuntimeError) { Manager::Config.new(:fly_to_the_moon => true) }
+  end
+
+  def test_ipv6_address_guessing
+    config = Manager::Config.new(:host => "::1")
+    assert(config.use_IPv6)
+    assert_equal("::1", config.host)
+  end
+
+  def test_applied_config
+    config = Manager::Config.new(:host => "1:2:3:4:5:6:7:8", :port => 42, :timeout => 3)
+    config.host
+    config.use_IPv6
+    config.retries
+    assert_equal({:host=>"1:2:3:4:5:6:7:8", :use_IPv6=>true, :retries=>5}, config.applied_config)
+  end
+end
+
 class TestManager < Test::Unit::TestCase
 
   include SNMP
@@ -30,24 +68,24 @@ class TestManager < Test::Unit::TestCase
   end
 
   def test_defaults
-    assert_equal('localhost', @manager.config[:Host])
-    assert_equal(161, @manager.config[:Port])
-    assert_equal('public', @manager.config[:WriteCommunity])
+    assert_equal('localhost', @manager.config[:host])
+    assert_equal(161, @manager.config[:port])
+    assert_equal('public', @manager.config[:write_community])
   end
 
   def test_community
     @manager = Manager.new(:WriteCommunity=>'private', :Transport => EchoTransport)
-    assert_equal('public', @manager.config[:Community])
-    assert_equal('private', @manager.config[:WriteCommunity])
+    assert_equal('public', @manager.config[:community])
+    assert_equal('private', @manager.config[:write_community])
 
     @manager = Manager.new(:Community=>'test', :Transport => EchoTransport)
-    assert_equal('test', @manager.config[:Community])
-    assert_equal('test', @manager.config[:WriteCommunity])
+    assert_equal('test', @manager.config[:community])
+    assert_equal('test', @manager.config[:write_community])
 
     @manager = Manager.new(:Community=>'test', :WriteCommunity=>'private',
                            :Transport => EchoTransport)
-    assert_equal('test', @manager.config[:Community])
-    assert_equal('private', @manager.config[:WriteCommunity])
+    assert_equal('test', @manager.config[:community])
+    assert_equal('private', @manager.config[:write_community])
   end
 
   def test_transport_instance

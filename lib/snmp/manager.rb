@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004 David R. Halliday
+# Copyright (c) 2004-2010 David R. Halliday
 # All rights reserved.
 #
 # This SNMP library is free software.  Redistribution is permitted under the
@@ -9,6 +9,7 @@
 
 require 'snmp/pdu'
 require 'snmp/mib'
+require 'snmp/options'
 require 'socket'
 require 'timeout'
 require 'thread'
@@ -22,8 +23,8 @@ module SNMP
   # using other transport types (e.g. TCP)
   #
   class UDPTransport
-    def initialize
-      @socket = UDPSocket.open
+    def initialize(address_family=Socket::AF_INET)
+      @socket = UDPSocket.open(address_family)
     end
 
     def close
@@ -70,16 +71,15 @@ module SNMP
     end
   end
 
+
   ##
-  # == SNMP Manager
-  #
   # This class provides a manager for interacting with a single SNMP agent.
   #
-  # = Example
+  # == Example
   #
   #    require 'snmp'
   #
-  #    manager = SNMP::Manager.new(:Host => 'localhost', :Port => 1061)
+  #    manager = SNMP::Manager.new(:host => 'localhost', :port => 1061)
   #    response = manager.get(["1.3.6.1.2.1.1.1.0", "1.3.6.1.2.1.1.2.0"])
   #    response.each_varbind {|vb| puts vb.inspect}
   #    manager.close
@@ -102,7 +102,7 @@ module SNMP
   # obtained from the libsmi website at
   # http://www.ibr.cs.tu-bs.de/projects/libsmi/ .
   #
-  # = Example
+  # == Example
   #
   # Do this once:
   #
@@ -110,29 +110,56 @@ module SNMP
   #
   # Include your module in MibModules each time you create a Manager:
   #
-  #   SNMP::Manager.new(:Host => 'localhost', :MibDir => MIB_OUTPUT_DIR,
-  #                     :MibModules => ["MY-MODULE-MIB", "SNMPv2-MIB", ...])
+  #   SNMP::Manager.new(:host => 'localhost', :mib_dir => MIB_OUTPUT_DIR,
+  #                     :mib_modules => ["MY-MODULE-MIB", "SNMPv2-MIB", ...])
   #
 
   class Manager
 
-    ##
-    # Default configuration.  Individual options may be overridden when
-    # the Manager is created.
-    #
-    DefaultConfig = {
-      :Host => 'localhost',
-      :Port => 161,
-      :TrapPort => 162,
-      :Community => 'public',
-      :WriteCommunity => nil,
-      :Version => :SNMPv2c,
-      :Timeout => 1,
-      :Retries => 5,
-      :Transport => UDPTransport,
-      :MaxReceiveBytes => 8000,
-      :MibDir => MIB::DEFAULT_MIB_PATH,
-    :MibModules => ["SNMPv2-SMI", "SNMPv2-MIB", "IF-MIB", "IP-MIB", "TCP-MIB", "UDP-MIB"]}
+    class Config < Options
+      @@force_IPv6 = false
+
+      class << self
+
+        ##
+        # Calling SNMP::Manager::Config.force_IPv6 causes all SNMP::Manager instances
+        # to use IPv6.  It can be called once at the start of a program instead of
+        # adding the {:use_IPv6 => true} option to every SNMP::Manager instance.
+        #
+        def force_IPv6
+          @@force_IPv6 = true
+        end
+
+        private
+
+          def choose_transport(config)
+            config.use_IPv6 ? UDPTransport.new : UDPTransport.new(Socket::AF_INET6)
+          end
+
+          def default_modules
+            ["SNMPv2-SMI", "SNMPv2-MIB", "IF-MIB", "IP-MIB", "TCP-MIB", "UDP-MIB"]
+          end
+
+          def ipv6_address?(config)
+            hostname = config.host.to_s
+            hostname.include?("::") || hostname.split(":").size == 8
+          end
+      end
+
+      option :host,            :Host,            'localhost'
+      option :port,            :Port,            161
+      option :trap_port,       :TrapPort,        162
+      option :community,       :Community,       'public'
+      option :write_community, :WriteCommunity,  lambda { |c| c.community }
+      option :version,         :Version,         :SNMPv2c
+      option :timeout,         :Timeout,         1
+      option :retries,         :Retries,         5
+      option :transport,       :Transport,       lambda { |c| choose_transport(c) }
+      option :max_recv_bytes,  :MaxReceiveBytes, 8000
+      option :mib_dir,         :MibDir,          MIB::DEFAULT_MIB_PATH
+      option :mib_modules,     :MibModules,      default_modules
+      option :use_IPv6,        :use_IPv6,        lambda { |c| @@force_IPv6 || ipv6_address?(c) }
+    end
 
     @@request_id = RequestId.new
 
@@ -146,25 +173,47 @@ module SNMP
     #
     attr_reader :mib
 
-    def initialize(config = {})
+    ##
+    # Creates a Manager. The following are valid options and their default values.
+    #
+    # <b>Note: The upper-case options supported in previous versions of this library are
+    # deprecated, but still supported for now.  Use at your own risk.</b>
+    #
+    #   Option              Default Value
+    #   --------------------------------------
+    #   :host               'localhost'
+    #   :port               161
+    #   :trap_port          162
+    #   :community          'public'
+    #   :write_community    Same as :community
+    #   :version            :SNMPv2c
+    #   :timeout            1 second
+    #   :retries            5
+    #   :transport          UDPTransport
+    #   :max_recv_bytes     8000 bytes
+    #   :mib_dir            MIB::DEFAULT_MIB_PATH
+    #   :mib_modules        SNMPv2-SMI, SNMPv2-MIB, IF-MIB, IP-MIB, TCP-MIB, UDP-MIB
+    #   :use_IPv6           false, unless :host is formatted like an IPv6 address
+    #
+    def initialize(options = {})
       if block_given?
         warn "SNMP::Manager::new() does not take block; use SNMP::Manager::open() instead"
       end
-      @config = DefaultConfig.merge(config)
-      @config[:WriteCommunity] = @config[:WriteCommunity] || @config[:Community]
-      @host = @config[:Host]
-      @port = @config[:Port]
-      @trap_port = @config[:TrapPort]
-      @community = @config[:Community]
-      @write_community = @config[:WriteCommunity]
-      @snmp_version = @config[:Version]
-      @timeout = @config[:Timeout]
-      @retries = @config[:Retries]
-      transport = @config[:Transport]
+      config = Config.new(options)
+      @host = config.host
+      @port = config.port
+      @trap_port = config.trap_port
+      @community = config.community
+      @write_community = config.write_community
+      @snmp_version = config.version
+      @timeout = config.timeout
+      @retries = config.retries
+      transport = config.transport
       @transport = transport.respond_to?(:new) ? transport.new : transport
-      @max_bytes = @config[:MaxReceiveBytes]
+      @max_bytes = config.max_recv_bytes
       @mib = MIB.new
-      load_modules(@config[:MibModules], @config[:MibDir])
+      load_modules(config.mib_modules, config.mib_dir)
+      @config = config.applied_config
     end
 
     ##
@@ -216,7 +265,7 @@ module SNMP
     #
     # For example:
     #
-    #   SNMP::Manager.open(:Host => "localhost") do |manager|
+    #   SNMP::Manager.open(:host => "localhost") do |manager|
     #     puts manager.get_value("sysDescr.0")
     #   end
     #
@@ -368,11 +417,11 @@ module SNMP
     #
     # For example:
     #
-    #   SNMP::Manager.open(:Host => "localhost") do |manager|
+    #   SNMP::Manager.open(:host => "localhost") do |manager|
     #     manager.walk("ifTable") { |vb| puts vb }
     #   end
     #
-    #   SNMP::Manager.open(:Host => "localhost") do |manager|
+    #   SNMP::Manager.open(:host => "localhost") do |manager|
     #     manager.walk(["ifIndex", "ifDescr"]) do |index, descr|
     #       puts "#{index.value} #{descr.value}"
     #     end
@@ -471,7 +520,7 @@ module SNMP
             warn e.to_s
           end
         end
-        raise RequestTimeout, "host #{@config[:Host]} not responding", caller
+        raise RequestTimeout, "host #{config[:host]} not responding", caller
       end
 
       def send_request(request, community, host, port)
