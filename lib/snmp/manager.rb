@@ -23,7 +23,7 @@ module SNMP
   # using other transport types (e.g. TCP)
   #
   class UDPTransport
-    def initialize(address_family=Socket::AF_INET)
+    def initialize(address_family)
       @socket = UDPSocket.open(address_family)
     end
 
@@ -117,35 +117,6 @@ module SNMP
   class Manager
 
     class Config < Options
-      @@force_IPv6 = false
-
-      class << self
-
-        ##
-        # Calling SNMP::Manager::Config.force_IPv6 causes all SNMP::Manager instances
-        # to use IPv6.  It can be called once at the start of a program instead of
-        # adding the {:use_IPv6 => true} option to every SNMP::Manager instance.
-        #
-        def force_IPv6
-          @@force_IPv6 = true
-        end
-
-        private
-
-          def choose_transport(config)
-            config.use_IPv6 ? UDPTransport.new : UDPTransport.new(Socket::AF_INET6)
-          end
-
-          def default_modules
-            ["SNMPv2-SMI", "SNMPv2-MIB", "IF-MIB", "IP-MIB", "TCP-MIB", "UDP-MIB"]
-          end
-
-          def ipv6_address?(config)
-            hostname = config.host.to_s
-            hostname.include?("::") || hostname.split(":").size == 8
-          end
-      end
-
       option :host,            :Host,            'localhost'
       option :port,            :Port,            161
       option :trap_port,       :TrapPort,        162
@@ -154,11 +125,15 @@ module SNMP
       option :version,         :Version,         :SNMPv2c
       option :timeout,         :Timeout,         1
       option :retries,         :Retries,         5
-      option :transport,       :Transport,       lambda { |c| choose_transport(c) }
+      option :transport,       :Transport,       UDPTransport
       option :max_recv_bytes,  :MaxReceiveBytes, 8000
       option :mib_dir,         :MibDir,          MIB::DEFAULT_MIB_PATH
       option :mib_modules,     :MibModules,      default_modules
-      option :use_IPv6,        :use_IPv6,        lambda { |c| @@force_IPv6 || ipv6_address?(c) }
+      option :use_IPv6,        :use_IPv6,        lambda { |c| ipv6_address?(c) }
+
+      def create_transport
+        transport.respond_to?(:new) ? transport.new(socket_address_family) : transport
+      end
     end
 
     @@request_id = RequestId.new
@@ -187,7 +162,7 @@ module SNMP
     #   :community          'public'
     #   :write_community    Same as :community
     #   :version            :SNMPv2c
-    #   :timeout            1 second
+    #   :timeout            1 (timeout units are seconds)
     #   :retries            5
     #   :transport          UDPTransport
     #   :max_recv_bytes     8000 bytes
@@ -195,9 +170,11 @@ module SNMP
     #   :mib_modules        SNMPv2-SMI, SNMPv2-MIB, IF-MIB, IP-MIB, TCP-MIB, UDP-MIB
     #   :use_IPv6           false, unless :host is formatted like an IPv6 address
     #
+    # Use {:version => :SNMPv1} for SNMP v1.  SNMP v3 is not supported.
+    #
     def initialize(options = {})
       if block_given?
-        warn "SNMP::Manager::new() does not take block; use SNMP::Manager::open() instead"
+        warn "SNMP::Manager.new() does not take block; use SNMP::Manager.open() instead"
       end
       config = Config.new(options)
       @host = config.host
@@ -208,8 +185,7 @@ module SNMP
       @snmp_version = config.version
       @timeout = config.timeout
       @retries = config.retries
-      transport = config.transport
-      @transport = transport.respond_to?(:new) ? transport.new : transport
+      @transport = config.create_transport
       @max_bytes = config.max_recv_bytes
       @mib = MIB.new
       load_modules(config.mib_modules, config.mib_dir)
@@ -544,8 +520,8 @@ module SNMP
   end
 
   class UDPServerTransport
-    def initialize(host, port)
-      @socket = UDPSocket.open
+    def initialize(host, port, address_family)
+      @socket = UDPSocket.open(address_family)
       @socket.bind(host, port)
     end
 
@@ -580,14 +556,26 @@ module SNMP
   #   m.join
   #
   class TrapListener
-    DefaultConfig = {
-      :Host => 'localhost',
-      :Port => 162,
-      :Community => 'public',
-      :ServerTransport => UDPServerTransport,
-    :MaxReceiveBytes => 8000}
+    class Config < Options
+      option :host, :Host, 'localhost'
+      option :port, :Port, 162
+      option :community, :Community, 'public'
+      option :server_transport, :ServerTransport, UDPServerTransport
+      option :max_recv_bytes, :MaxReceiveBytes, 8000
+      option :use_IPv6, :use_IPv6, false
+
+      def create_transport
+        server_transport.respond_to?(:new) ?
+          server_transport.new(host, port, socket_address_family) : server_transport
+      end
+    end
 
     NULL_HANDLER = Proc.new {}
+
+    ##
+    # Retrieves the current configuration of this TrapListener.
+    #
+    attr_reader :config
 
     ##
     # Start a trap handler thread.  If a block is provided then the block
@@ -603,10 +591,13 @@ module SNMP
     # 2. handler for a specific SNMP version
     # 3. default handler
     #
-    def initialize(config={}, &block)
-      @config = DefaultConfig.dup.update(config)
-      @transport = @config[:ServerTransport].new(@config[:Host], @config[:Port])
-      @max_bytes = @config[:MaxReceiveBytes]
+    def initialize(options={}, &block)
+      config = Config.new(options)
+      @transport = config.create_transport
+      @community = config.community
+      @max_bytes = config.max_recv_bytes
+      @config = config.applied_config
+
       @handler_init = block
       @oid_handler = {}
       @v1_handler = nil
@@ -686,7 +677,7 @@ module SNMP
           data, source_ip, source_port = @transport.recvfrom(@max_bytes)
           begin
             message = Message.decode(data)
-            if @config[:Community] == message.community
+            if @community == message.community
               trap = message.pdu
               if trap.kind_of?(InformRequest)
                 @transport.send(message.response.encode, source_ip, source_port)

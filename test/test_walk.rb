@@ -69,7 +69,7 @@ class TestTransport < Test::Unit::TestCase
 
   def test_get
     YamlDataTransport.load_data(File.dirname(__FILE__) + "/if_table6.yaml")
-    SNMP::Manager.open(:Transport => YamlDataTransport) do |snmp|
+    SNMP::Manager.open(:Transport => YamlDataTransport.new) do |snmp|
       value = snmp.get_value("ifDescr.1")
       assert_equal("lo0", value)
     end
@@ -77,7 +77,7 @@ class TestTransport < Test::Unit::TestCase
 
   def test_get_next
     YamlDataTransport.load_data(File.dirname(__FILE__) + "/if_table6.yaml")
-    SNMP::Manager.open(:Transport => YamlDataTransport) do |snmp|
+    SNMP::Manager.open(:Transport => YamlDataTransport.new) do |snmp|
       vb = snmp.get_next("ifDescr.1")
       assert_equal("gif0", vb.vb_list.first.value)
     end
@@ -181,11 +181,11 @@ class TestWalk < Test::Unit::TestCase
 
     def ifTable1_manager
       YamlDataTransport.load_data(File.dirname(__FILE__) + "/if_table1.yaml")
-      Manager.new(:Transport => YamlDataTransport)
+      Manager.new(:Transport => YamlDataTransport.new)
     end
 
     def ifTable6_manager
       YamlDataTransport.load_data(File.dirname(__FILE__) + "/if_table6.yaml")
-      Manager.new(:Transport => YamlDataTransport)
+      Manager.new(:Transport => YamlDataTransport.new)
     end
 end

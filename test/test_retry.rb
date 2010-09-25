@@ -76,7 +76,7 @@ class TestRetry < Test::Unit::TestCase
   end
 
   def test_drop_mismatched_id
-    m = SNMP::Manager.new(:Transport => MismatchIdTransport)
+    m = SNMP::Manager.new(:Transport => MismatchIdTransport.new)
     m.get("1.2.3.4")
   end
 end

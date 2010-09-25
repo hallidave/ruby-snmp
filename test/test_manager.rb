@@ -51,7 +51,8 @@ class TestConfig < Test::Unit::TestCase
     config.host
     config.use_IPv6
     config.retries
-    assert_equal({:host=>"1:2:3:4:5:6:7:8", :use_IPv6=>true, :retries=>5}, config.applied_config)
+    assert_equal({:host=>"1:2:3:4:5:6:7:8", :retries=>5, :use_IPv6=>true,
+                  :Host => "1:2:3:4:5:6:7:8", :Retries => 5}, config.applied_config)
   end
 end
 
@@ -60,7 +61,7 @@ class TestManager < Test::Unit::TestCase
   include SNMP
 
   def setup
-    @manager = Manager.new(:Transport => EchoTransport)
+    @manager = Manager.new(:Transport => EchoTransport.new)
   end
 
   def teardown
@@ -74,16 +75,16 @@ class TestManager < Test::Unit::TestCase
   end
 
   def test_community
-    @manager = Manager.new(:WriteCommunity=>'private', :Transport => EchoTransport)
+    @manager = Manager.new(:WriteCommunity=>'private', :Transport => EchoTransport.new)
     assert_equal('public', @manager.config[:community])
     assert_equal('private', @manager.config[:write_community])
 
-    @manager = Manager.new(:Community=>'test', :Transport => EchoTransport)
+    @manager = Manager.new(:Community=>'test', :Transport => EchoTransport.new)
     assert_equal('test', @manager.config[:community])
     assert_equal('test', @manager.config[:write_community])
 
     @manager = Manager.new(:Community=>'test', :WriteCommunity=>'private',
-                           :Transport => EchoTransport)
+                           :Transport => EchoTransport.new)
     assert_equal('test', @manager.config[:community])
     assert_equal('private', @manager.config[:write_community])
   end
@@ -169,7 +170,7 @@ class TestManager < Test::Unit::TestCase
   end
 
   def test_trap_v1
-    manager = Manager.new(:Transport => EchoTransport, :Version => :SNMPv1)
+    manager = Manager.new(:Transport => EchoTransport.new, :Version => :SNMPv1)
     sent_data = manager.trap_v1(
       "enterprises.9",
       "10.1.2.3",
@@ -217,7 +218,7 @@ end
 
 class TrapTestTransport
   include SNMP
-  def initialize(host, port)
+  def initialize
     @count = 0
     sys_up_varbind = VarBind.new(ObjectId.new("1.3.6.1.2.1.1.3.0"),
                                  TimeTicks.new(1234))
@@ -250,7 +251,7 @@ class TestTrapListener < Test::Unit::TestCase
 
   def test_init_no_handlers
     init_called = false
-    m = TrapListener.new(:ServerTransport => TrapTestTransport) do |manager|
+    m = TrapListener.new(:ServerTransport => TrapTestTransport.new) do |manager|
       init_called = true
     end
     m.join
@@ -260,7 +261,7 @@ class TestTrapListener < Test::Unit::TestCase
   def test_v2c_handler
     default_called = false
     v2c_called = false
-    m = TrapListener.new(:ServerTransport => TrapTestTransport) do |manager|
+    m = TrapListener.new(:ServerTransport => TrapTestTransport.new) do |manager|
       manager.on_trap_default { default_called = true }
       manager.on_trap_v2c { v2c_called = true }
     end
@@ -273,7 +274,7 @@ class TestTrapListener < Test::Unit::TestCase
     default_called = false
     v2c_called = false
     oid_called = false
-    m = TrapListener.new(:ServerTransport => TrapTestTransport) do |manager|
+    m = TrapListener.new(:ServerTransport => TrapTestTransport.new) do |manager|
       manager.on_trap("1.2.3") do |trap|
         assert_equal(ObjectId.new("1.2.3"), trap.trap_oid)
         assert_equal("127.0.0.1", trap.source_ip)
@@ -292,7 +293,7 @@ class TestTrapListener < Test::Unit::TestCase
     default_called = false
     m = TrapListener.new(
       :Community => "test",
-    :ServerTransport => TrapTestTransport) do |manager|
+    :ServerTransport => TrapTestTransport.new) do |manager|
       manager.on_trap_default { default_called = true }
     end
     m.join
