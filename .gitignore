@@ -1,3 +1,6 @@
 doc
-web/web
+web/site
 pkg
+*.ipr
+*.iml
+*.iws
