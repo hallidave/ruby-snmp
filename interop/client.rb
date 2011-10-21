@@ -9,7 +9,7 @@ def compare_gets(oid)
   message1 = @server.last_pdu
   request_id = @server.last_request_id
 
-  Manager.open(:Host => 'localhost', :Port => 1061) do |manager|
+  Manager.open(:host => 'localhost', :port => 1061) do |manager|
     manager.next_request_id = request_id
     puts manager.get(oid).varbind_list.first
   end
