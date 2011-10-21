@@ -8,7 +8,6 @@
 #
 
 require 'snmp/varbind'
-require 'rbconfig'
 require 'fileutils'
 require 'yaml'
 
@@ -17,21 +16,12 @@ module SNMP
   class MIB
 
     #:stopdoc:
-    share_path = File.join(Config::CONFIG["datadir"], "ruby", "snmp", "mibs")
-    data_path = File.expand_path(
-      File.join(File.dirname(__FILE__), "..", "..", "data", "ruby", "snmp", "mibs")
-    )
-    if (File.exist?(share_path) && File.exist?(data_path))
-      warn "Found two MIB directories:\n  #{share_path}\n  #{data_path}\n" +
-        "Using MIB::DEFAULT_MIB_PATH=#{data_path}"
-        DEFAULT_MIB_PATH = data_path
-    elsif (File.exist?(data_path))
-      DEFAULT_MIB_PATH = data_path
-    elsif (File.exist?(share_path))
-      DEFAULT_MIB_PATH = share_path
+    data_path = File.expand_path(File.dirname(__FILE__) + "/../../data/ruby/snmp/mibs")
+    DEFAULT_MIB_PATH = if (File.exist?(data_path))
+      data_path
     else
-      warn "Could not find default MIB directory, tried:\n  #{share_path}\n  #{data_path}"
-      DEFAULT_MIB_PATH = nil
+      warn "Could not find default MIB directory, tried:\n  #{data_path}"
+      nil
     end
     #:startdoc:
 
@@ -69,7 +59,7 @@ module SNMP
       def import_module(module_file, mib_dir=DEFAULT_MIB_PATH)
         raise "smidump tool must be installed" unless import_supported?
         FileUtils.makedirs mib_dir
-        mib_hash = `smidump -f python #{module_file}`
+        mib_hash = `smidump -k -f python #{module_file}`
         mib = eval_mib_data(mib_hash)
         if mib
           module_name = mib["moduleName"]
