@@ -26,6 +26,13 @@ examples below for more details.
 
 == Changes
 
+Changes for version 1.0.4:
+
+* New option handling and added lower-case versions of all options
+* Added SNMP::VERSION constant
+* Experimental support for IPv6
+* Removed support for installation with setup.rb
+
 Changes for version 1.0.3:
 
 * Minor changes to Manager class.  The :Transport option may now be an

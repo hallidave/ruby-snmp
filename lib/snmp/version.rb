@@ -1,3 +1,3 @@
 module SNMP
-  VERSION = "1.0.4.dev"
+  VERSION = "1.0.4"
 end
