@@ -5,7 +5,6 @@ require 'snmp/version'
 PKG_FILES = FileList[
     'Rakefile',
     'README.rdoc',
-    'setup.rb',
     'lib/**/*.rb',
     'test/**/test*.rb',
     'test/**/*.yaml',
