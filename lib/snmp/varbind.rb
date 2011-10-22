@@ -137,8 +137,8 @@ module SNMP
   class ObjectId < Array
     include Comparable
 
-    def self.decode(value_data)
-      ObjectId.new(decode_object_id_value(value_data))
+    def self.decode(value_data, mib=nil)
+      ObjectId.new(decode_object_id_value(value_data), mib)
     end
 
     def asn1_type
@@ -149,7 +149,7 @@ module SNMP
     # Create an object id.  The input is expected to be either a string
     # in the format "n.n.n.n.n.n" or an array of integers.
     #
-    def initialize(id=[])
+    def initialize(id=[], mib=nil)
       if id.nil?
         raise ArgumentError
       elsif id.respond_to? :to_str
@@ -157,6 +157,7 @@ module SNMP
       else
         super(make_integers(id.to_ary))
       end
+      @mib = mib
     rescue ArgumentError
       raise ArgumentError, "#{id.inspect}:#{id.class} not a valid object ID"
     end
@@ -170,7 +171,11 @@ module SNMP
     end
 
     def to_s
-      self.join('.')
+      if @mib
+        @mib.name(self)
+      else
+        self.join('.')
+      end
     end
 
     def inspect

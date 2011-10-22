@@ -7,6 +7,7 @@ module SNMP
 
     def setup
       @mib = MIB.new
+      @mib.load_module("SNMPv2-SMI")
       @mib.load_module("SNMPv2-MIB")
       @mib.load_module("IF-MIB")
     end
@@ -69,6 +70,20 @@ module SNMP
     def test_list
       list = MIB.list_imported(/SNMPv2/)
       assert_equal(4, list.length)
+    end
+
+    def test_name
+      cases = [["1.3.6.1.2.1.2.2.3.45", "IF-MIB::ifTable.3.45"],
+               ["1.3.6.1.2.1.1.0", "SNMPv2-MIB::system.0"],
+               ["1.2.3.4", "1.2.3.4"],
+               ["1.3", "SNMPv2-SMI::org"],
+               ["1.2", "1.2"],
+               ["1", "1"],
+               ["", ""]]
+      cases.each do |oid, expected_name|
+        name = @mib.name(oid)
+        assert_equal(expected_name, name)
+      end
     end
 
     # def test_import

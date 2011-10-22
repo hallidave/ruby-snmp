@@ -124,6 +124,13 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal("", ObjectId.new.to_s)
   end
 
+  def test_object_id_to_s_with_mib
+    mib = MIB.new
+    mib.load_module("IF-MIB")
+    id = ObjectId.new("1.3.6.1.2.1.2.2.1.2.1.1", mib)
+    assert_equal("IF-MIB::ifDescr.1.1", id.to_s)
+  end
+
   def test_object_id_create
     assert_equal("1.3.6.1", ObjectId.new("1.3.6.1").to_s)
     assert_equal("1.3.6.1", ObjectId.new([1,3,6,1]).to_s)

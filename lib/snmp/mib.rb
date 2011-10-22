@@ -136,6 +136,7 @@ module SNMP
     def initialize
       @by_name = {}
       @by_module_by_name = {}
+      @by_oid = {}
     end
 
     ##
@@ -152,6 +153,9 @@ module SNMP
       end
       @by_module_by_name[module_name] = {}
       @by_module_by_name[module_name].merge!(oid_hash)
+
+      name_hash = Hash[ oid_hash.invert.to_a.collect { |oid, name| [oid, "#{module_name}::#{name}"] } ]
+      @by_oid.merge!(name_hash)
     end
 
     ##
@@ -232,6 +236,24 @@ module SNMP
       else
         raise ArgumentError, "invalid format: #{name.to_str}"
       end
+    end
+
+    ##
+    # Returns the symbolic name of the given OID.
+    #
+    # e.g. OID "1.3.6.1.2.1.1.0" returns symbol "SNMPv2-MIB::system.0"
+    #
+    def name(oid)
+      current_oid = ObjectId.new(oid)
+      index = []
+      while current_oid.size > 1
+        name = @by_oid[current_oid.to_s]
+        if name
+          return index.empty? ? name : "#{name}.#{index.join('.')}"
+        end
+        index.unshift current_oid.slice!(-1)
+      end
+      oid.to_s
     end
 
     def parse_oid(node_hash, name)
