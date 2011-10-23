@@ -17,11 +17,11 @@ module SNMP
   class InvalidIpAddress < ArgumentError; end
 
   class VarBindList < Array
-    def self.decode(data)
+    def self.decode(data, mib=nil)
       list = VarBindList.new
       varbind_data, remainder = decode_sequence(data)
       while varbind_data != ""
-        varbind, varbind_data = VarBind.decode(varbind_data)
+        varbind, varbind_data = VarBind.decode(varbind_data, mib)
         list << varbind
       end
       return list, remainder
@@ -162,6 +162,11 @@ module SNMP
       raise ArgumentError, "#{id.inspect}:#{id.class} not a valid object ID"
     end
 
+    def with_mib(mib)
+      @mib = mib
+      self
+    end
+
     def to_varbind
       VarBind.new(self, Null)
     end
@@ -179,7 +184,7 @@ module SNMP
     end
 
     def inspect
-      "[#{self.to_s}]"
+      "[#{self.join('.')}]"
     end
 
     def encode
@@ -512,12 +517,12 @@ module SNMP
     alias :oid :name
 
     class << self
-      def decode(data)
+      def decode(data, mib=nil)
         varbind_data, remaining_varbind_data = decode_sequence(data)
         name, remainder = decode_object_id(varbind_data)
         value, remainder = decode_value(remainder)
         assert_no_remainder(remainder)
-        return VarBind.new(name, value), remaining_varbind_data
+        return VarBind.new(name, value).with_mib(mib), remaining_varbind_data
       end
 
       ValueDecoderMap = {
@@ -556,6 +561,11 @@ module SNMP
         @name = ObjectName.new(name)
       end
       @value = value
+    end
+
+    def with_mib(mib)
+      @name.with_mib(mib) if @name
+      self
     end
 
     def asn1_type

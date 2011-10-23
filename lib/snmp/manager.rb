@@ -16,7 +16,8 @@ require 'thread'
 
 module SNMP
 
-  class RequestTimeout < RuntimeError; end
+  class RequestTimeout < RuntimeError;
+  end
 
   ##
   # Wrap socket so that it can be easily substituted for testing or for
@@ -55,7 +56,7 @@ module SNMP
       @lock.synchronize do
         @request_id += 1
         @request_id = 1 if @request_id == MAX_REQUEST_ID
-        return  @request_id
+        return @request_id
       end
     end
 
@@ -117,19 +118,19 @@ module SNMP
   class Manager
 
     class Config < Options
-      option :host,            :Host,            'localhost'
-      option :port,            :Port,            161
-      option :trap_port,       :TrapPort,        162
-      option :community,       :Community,       'public'
-      option :write_community, :WriteCommunity,  lambda { |c| c.community }
-      option :version,         :Version,         :SNMPv2c
-      option :timeout,         :Timeout,         1
-      option :retries,         :Retries,         5
-      option :transport,       :Transport,       UDPTransport
-      option :max_recv_bytes,  :MaxReceiveBytes, 8000
-      option :mib_dir,         :MibDir,          MIB::DEFAULT_MIB_PATH
-      option :mib_modules,     :MibModules,      default_modules
-      option :use_IPv6,        :use_IPv6,        lambda { |c| ipv6_address?(c) }
+      option :host, :Host, 'localhost'
+      option :port, :Port, 161
+      option :trap_port, :TrapPort, 162
+      option :community, :Community, 'public'
+      option :write_community, :WriteCommunity, lambda { |c| c.community }
+      option :version, :Version, :SNMPv2c
+      option :timeout, :Timeout, 1
+      option :retries, :Retries, 5
+      option :transport, :Transport, UDPTransport
+      option :max_recv_bytes, :MaxReceiveBytes, 8000
+      option :mib_dir, :MibDir, MIB::DEFAULT_MIB_PATH
+      option :mib_modules, :MibModules, default_modules
+      option :use_IPv6, :use_IPv6, lambda { |c| ipv6_address?(c) }
 
       def create_transport
         transport.respond_to?(:new) ? transport.new(socket_address_family) : transport
@@ -274,10 +275,10 @@ module SNMP
     def get_bulk(non_repeaters, max_repetitions, object_list)
       varbind_list = @mib.varbind_list(object_list, :NullValue)
       request = GetBulkRequest.new(
-        @@request_id.next,
-        varbind_list,
-        non_repeaters,
-      max_repetitions)
+          @@request_id.next,
+          varbind_list,
+          non_repeaters,
+          max_repetitions)
       try_request(request)
     end
 
@@ -417,7 +418,7 @@ module SNMP
       vb_list = @mib.varbind_list(object_list, :NullValue)
       raise ArgumentError, "index_column is past end of varbind list" if index_column >= vb_list.length
       is_single_vb = object_list.respond_to?(:to_str) ||
-        object_list.respond_to?(:to_varbind)
+          object_list.respond_to?(:to_varbind)
       start_list = vb_list
       start_oid = vb_list[index_column].name
       last_oid = start_oid
@@ -455,12 +456,13 @@ module SNMP
         if i != index_column
           expected_oid = start_list[i].name + row_index
           if vb_list[i].name != expected_oid
-            vb_list[i] = VarBind.new(expected_oid, NoSuchInstance)
+            vb_list[i] = VarBind.new(expected_oid, NoSuchInstance).with_mib(@mib)
           end
         end
       end
       vb_list
     end
+
     private :validate_row
 
     ##
@@ -473,50 +475,50 @@ module SNMP
 
     private
 
-      def warn(message)
-        trace = caller(2)
-        location = trace[0].sub(/:in.*/,'')
-        Kernel::warn "#{location}: warning: #{message}"
-      end
+    def warn(message)
+      trace = caller(2)
+      location = trace[0].sub(/:in.*/, '')
+      Kernel::warn "#{location}: warning: #{message}"
+    end
 
-      def load_modules(module_list, mib_dir)
-        module_list.each { |m| @mib.load_module(m, mib_dir) }
-      end
+    def load_modules(module_list, mib_dir)
+      module_list.each { |m| @mib.load_module(m, mib_dir) }
+    end
 
-      def try_request(request, community=@community, host=@host, port=@port)
-        (@retries + 1).times do |n|
-          send_request(request, community, host, port)
-          begin
-            Timeout.timeout(@timeout) do
-              return get_response(request)
-            end
-          rescue Timeout::Error
-            # no action - try again
-          rescue => e
-            warn e.to_s
-          end
-        end
-        raise RequestTimeout, "host #{config[:host]} not responding", caller
-      end
-
-      def send_request(request, community, host, port)
-        message = Message.new(@snmp_version, community, request)
-        @transport.send(message.encode, host, port)
-      end
-
-      ##
-      # Wait until response arrives.  Ignore responses with mismatched IDs;
-      # these responses are typically from previous requests that timed out
-      # or almost timed out.
-      #
-      def get_response(request)
+    def try_request(request, community=@community, host=@host, port=@port)
+      (@retries + 1).times do |n|
+        send_request(request, community, host, port)
         begin
-          data = @transport.recv(@max_bytes)
-          message = Message.decode(data)
-          response = message.pdu
-        end until request.request_id == response.request_id
-        response
+          Timeout.timeout(@timeout) do
+            return get_response(request)
+          end
+        rescue Timeout::Error
+          # no action - try again
+        rescue => e
+          warn e.to_s
+        end
       end
+      raise RequestTimeout, "host #{config[:host]} not responding", caller
+    end
+
+    def send_request(request, community, host, port)
+      message = Message.new(@snmp_version, community, request)
+      @transport.send(message.encode, host, port)
+    end
+
+    ##
+    # Wait until response arrives.  Ignore responses with mismatched IDs;
+    # these responses are typically from previous requests that timed out
+    # or almost timed out.
+    #
+    def get_response(request)
+      begin
+        data = @transport.recv(@max_bytes)
+        message = Message.decode(data, @mib)
+        response = message.pdu
+      end until request.request_id == response.request_id
+      response
+    end
   end
 
   class UDPServerTransport
@@ -562,11 +564,13 @@ module SNMP
       option :community, :Community, 'public'
       option :server_transport, :ServerTransport, UDPServerTransport
       option :max_recv_bytes, :MaxReceiveBytes, 8000
+      option :mib_dir, :MibDir, MIB::DEFAULT_MIB_PATH
+      option :mib_modules, :MibModules, default_modules
       option :use_IPv6, :use_IPv6, false
 
       def create_transport
         server_transport.respond_to?(:new) ?
-          server_transport.new(host, port, socket_address_family) : server_transport
+            server_transport.new(host, port, socket_address_family) : server_transport
       end
     end
 
@@ -596,6 +600,8 @@ module SNMP
       @transport = config.create_transport
       @community = config.community
       @max_bytes = config.max_recv_bytes
+      @mib = MIB.new
+      load_modules(config.mib_modules, config.mib_dir)
       @config = config.applied_config
 
       @handler_init = block
@@ -671,55 +677,59 @@ module SNMP
 
     private
 
-      def process_traps(trap_listener)
-        @handler_init.call(trap_listener) if @handler_init
-        loop do
-          data, source_ip, source_port = @transport.recvfrom(@max_bytes)
-          begin
-            message = Message.decode(data)
-            if @community == message.community
-              trap = message.pdu
-              if trap.kind_of?(InformRequest)
-                @transport.send(message.response.encode, source_ip, source_port)
-              end
-              trap.source_ip = source_ip
-              select_handler(trap).call(trap)
+    def load_modules(module_list, mib_dir)
+      module_list.each { |m| @mib.load_module(m, mib_dir) }
+    end
+
+    def process_traps(trap_listener)
+      @handler_init.call(trap_listener) if @handler_init
+      loop do
+        data, source_ip, source_port = @transport.recvfrom(@max_bytes)
+        begin
+          message = Message.decode(data, @mib)
+          if @community == message.community
+            trap = message.pdu
+            if trap.kind_of?(InformRequest)
+              @transport.send(message.response.encode, source_ip, source_port)
             end
-          rescue => e
-            puts "Error handling trap: #{e}"
-            puts e.backtrace.join("\n")
-            puts "Received data:"
-            p data
+            trap.source_ip = source_ip
+            select_handler(trap).call(trap)
           end
+        rescue => e
+          puts "Error handling trap: #{e}"
+          puts e.backtrace.join("\n")
+          puts "Received data:"
+          p data
         end
       end
+    end
 
-      def select_handler(trap)
-        @lock.synchronize do
-          if trap.kind_of?(SNMPv2_Trap)
-            oid = trap.trap_oid
-            if @oid_handler[oid]
-              return @oid_handler[oid]
-            elsif @v2c_handler
-              return @v2c_handler
-            elsif @default_handler
-              return @default_handler
-            else
-              return NULL_HANDLER
-            end
-          elsif trap.kind_of?(SNMPv1_Trap)
-            if @v1_handler
-              return @v1_handler
-            elsif @default_handler
-              return @default_handler
-            else
-              return NULL_HANDLER
-            end
+    def select_handler(trap)
+      @lock.synchronize do
+        if trap.kind_of?(SNMPv2_Trap)
+          oid = trap.trap_oid
+          if @oid_handler[oid]
+            return @oid_handler[oid]
+          elsif @v2c_handler
+            return @v2c_handler
+          elsif @default_handler
+            return @default_handler
           else
             return NULL_HANDLER
           end
+        elsif trap.kind_of?(SNMPv1_Trap)
+          if @v1_handler
+            return @v1_handler
+          elsif @default_handler
+            return @default_handler
+          else
+            return NULL_HANDLER
+          end
+        else
+          return NULL_HANDLER
         end
       end
+    end
   end
 
 end

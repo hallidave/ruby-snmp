@@ -143,8 +143,8 @@ class TestManager < Test::Unit::TestCase
     assert_equal(:noError, response.error_status)
     assert_equal(0, response.error_index)
     assert_equal(2, response.varbind_list.length)
-    assert_equal("1.3.6.1.3.1.1.1.0", response.varbind_list[0].name.to_s)
-    assert_equal("1.3.6.1.3.1.1.2.0", response.varbind_list[1].name.to_s)
+    assert_equal("SNMPv2-SMI::experimental.1.1.1.0", response.varbind_list[0].name.to_s)
+    assert_equal("SNMPv2-SMI::experimental.1.1.2.0", response.varbind_list[1].name.to_s)
   end
 
   def test_walk

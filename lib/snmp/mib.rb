@@ -253,7 +253,7 @@ module SNMP
         end
         index.unshift current_oid.slice!(-1)
       end
-      oid.to_s
+      ObjectId.new(oid).to_s
     end
 
     def parse_oid(node_hash, name)

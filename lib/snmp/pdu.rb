@@ -32,12 +32,12 @@ module SNMP
     attr_reader :pdu
 
     class << self
-      def decode(data)
+      def decode(data, mib=nil)
         message_data, remainder = decode_sequence(data)
         assert_no_remainder(remainder)
         version, remainder = decode_version(message_data)
         community, remainder = decode_octet_string(remainder)
-        pdu, remainder = decode_pdu(version, remainder)
+        pdu, remainder = decode_pdu(version, remainder, mib)
         assert_no_remainder(remainder)
         Message.new(version, community, pdu)
       end
@@ -54,29 +54,29 @@ module SNMP
         return version, remainder
       end
 
-      def decode_pdu(version, data)
+      def decode_pdu(version, data, mib=nil)
         pdu_tag, pdu_data, remainder = decode_tlv(data)
         case pdu_tag
         when GetRequest_PDU_TAG
-          pdu = PDU.decode(GetRequest, pdu_data)
+          pdu = PDU.decode(GetRequest, pdu_data, mib)
         when GetNextRequest_PDU_TAG
-          pdu = PDU.decode(GetNextRequest, pdu_data)
+          pdu = PDU.decode(GetNextRequest, pdu_data, mib)
         when Response_PDU_TAG
-          pdu = PDU.decode(Response, pdu_data)
+          pdu = PDU.decode(Response, pdu_data, mib)
         when SetRequest_PDU_TAG
-          pdu = PDU.decode(SetRequest, pdu_data)
+          pdu = PDU.decode(SetRequest, pdu_data, mib)
         when SNMPv1_Trap_PDU_TAG
           raise InvalidPduTag, "SNMPv1-trap not valid for #{version.to_s}" if version != :SNMPv1
-          pdu = SNMPv1_Trap.decode(pdu_data)
+          pdu = SNMPv1_Trap.decode(pdu_data, mib)
         when GetBulkRequest_PDU_TAG
           raise InvalidPduTag, "get-bulk not valid for #{version.to_s}" if version != :SNMPv2c
-          pdu = PDU.decode(GetBulkRequest, pdu_data)
+          pdu = PDU.decode(GetBulkRequest, pdu_data, mib)
         when InformRequest_PDU_TAG
           raise InvalidPduTag, "inform not valid for #{version.to_s}" if version != :SNMPv2c
-          pdu = PDU.decode(InformRequest, pdu_data)
+          pdu = PDU.decode(InformRequest, pdu_data, mib)
         when SNMPv2_Trap_PDU_TAG
           raise InvalidPduTag, "SNMPv2c-trap not valid for #{version.to_s}" if version != :SNMPv2c
-          pdu = PDU.decode(SNMPv2_Trap, pdu_data)
+          pdu = PDU.decode(SNMPv2_Trap, pdu_data, mib)
         else
           raise UnsupportedPduTag, pdu_tag.to_s
         end
@@ -119,11 +119,11 @@ module SNMP
 
     alias vb_list varbind_list
 
-    def self.decode(pdu_class, pdu_data)
+    def self.decode(pdu_class, pdu_data, mib=nil)
       request_id, remainder = decode_integer(pdu_data)
       error_status, remainder = decode_integer(remainder)
       error_index, remainder = decode_integer(remainder)
-      varbind_list, remainder = VarBindList.decode(remainder)
+      varbind_list, remainder = VarBindList.decode(remainder, mib)
       assert_no_remainder(remainder)
       pdu_class.new(request_id, varbind_list, error_status, error_index)
     end
@@ -310,7 +310,7 @@ module SNMP
 
     alias :vb_list :varbind_list
 
-    def self.decode(pdu_data)
+    def self.decode(pdu_data, mib=nil)
       oid_data, remainder = decode_object_id(pdu_data)
       enterprise = ObjectId.new(oid_data)
       ip_data, remainder = decode_ip_address(remainder)
@@ -319,7 +319,7 @@ module SNMP
       specific_trap, remainder = decode_integer(remainder)
       time_data, remainder = decode_timeticks(remainder)
       timestamp = TimeTicks.new(time_data)
-      varbind_list, remainder = VarBindList.decode(remainder)
+      varbind_list, remainder = VarBindList.decode(remainder, mib)
       assert_no_remainder(remainder)
       SNMPv1_Trap.new(enterprise, agent_addr, generic_trap, specific_trap,
                       timestamp, varbind_list)
