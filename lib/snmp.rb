@@ -8,3 +8,4 @@
 #
 
 require 'snmp/manager'
+require 'snmp/version'
