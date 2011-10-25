@@ -133,11 +133,10 @@ module SNMP
         end
     end # class methods
 
-    def initialize(oid_style=:symbols)
+    def initialize
       @by_name = {}
       @by_module_by_name = {}
       @by_oid = {}
-      @oid_style = oid_style
     end
 
     ##
@@ -245,16 +244,14 @@ module SNMP
     # e.g. OID "1.3.6.1.2.1.1.0" returns symbol "SNMPv2-MIB::system.0"
     #
     def name(oid)
-      if @oid_style == :symbols
-        current_oid = ObjectId.new(oid)
-        index = []
-        while current_oid.size > 1
-          name = @by_oid[current_oid.to_s]
-          if name
-            return index.empty? ? name : "#{name}.#{index.join('.')}"
-          end
-          index.unshift current_oid.slice!(-1)
+      current_oid = ObjectId.new(oid)
+      index = []
+      while current_oid.size > 1
+        name = @by_oid[current_oid.to_s]
+        if name
+          return index.empty? ? name : "#{name}.#{index.join('.')}"
         end
+        index.unshift current_oid.slice!(-1)
       end
       ObjectId.new(oid).to_s
     end

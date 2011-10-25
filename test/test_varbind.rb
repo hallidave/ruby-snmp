@@ -22,6 +22,17 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal("0\f\006\010+\006\001\002\001\001\002\000\005\000", remainder)
   end
 
+  def test_varbind_to_s
+    mib = MIB.new
+    mib.load_module("IF-MIB")
+
+    vb = VarBind.new("1.3.6.1.2.1.2.2.1.2.1.1", OctetString.new("description")).with_mib(mib)
+    assert_equal "[name=IF-MIB::ifDescr.1.1, value=description (OCTET STRING)]", vb.to_s
+
+    vb = VarBind.new("1.3.6.1.2.1.2.2.1.2.1.1", ObjectId.new("1.3.6.1.2.1.2.2.1.2.1.1")).with_mib(mib)
+    assert_equal "[name=IF-MIB::ifDescr.1.1, value=IF-MIB::ifDescr.1.1 (OBJECT IDENTIFIER)]", vb.to_s
+  end
+
   def test_varbind_name_alias_oid
     vb = VarBind.new("1.2.3.4", OctetString.new("blah"))
     assert_equal(ObjectId.new("1.2.3.4"), vb.name)
@@ -129,6 +140,8 @@ class TestVarBind < Test::Unit::TestCase
     mib.load_module("IF-MIB")
     id = ObjectId.new("1.3.6.1.2.1.2.2.1.2.1.1", mib)
     assert_equal("IF-MIB::ifDescr.1.1", id.to_s)
+    assert_equal("1.3.6.1.2.1.2.2.1.2.1.1", id.to_str)
+    assert_equal("[1.3.6.1.2.1.2.2.1.2.1.1]", id.inspect)
   end
 
   def test_object_id_create

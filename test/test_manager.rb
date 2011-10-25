@@ -206,12 +206,12 @@ class TestManager < Test::Unit::TestCase
   def test_inform
     response = @manager.inform(1234, "1.3.6.1.2.3.4")
     assert_equal(1234, response.vb_list[0].value)
-    assert_equal("1.3.6.1.2.3.4", response.vb_list[1].value.to_s)
+    assert_equal("SNMPv2-SMI::mgmt.3.4", response.vb_list[1].value.to_s)
     assert_equal(2, response.vb_list.length)
 
     response = @manager.inform(1234, "1.3.6.1.2.3.4", ["1.2.3", "1.4.5.6"])
     assert_equal(1234, response.vb_list[0].value)
-    assert_equal("1.3.6.1.2.3.4", response.vb_list[1].value.to_s)
+    assert_equal("SNMPv2-SMI::mgmt.3.4", response.vb_list[1].value.to_s)
     assert_equal(4, response.vb_list.length)
   end
 end

@@ -162,6 +162,9 @@ module SNMP
       raise ArgumentError, "#{id.inspect}:#{id.class} not a valid object ID"
     end
 
+    ##
+    # Adds MIB information to this object_id for use with to_s.
+    #
     def with_mib(mib)
       @mib = mib
       self
@@ -179,12 +182,16 @@ module SNMP
       if @mib
         @mib.name(self)
       else
-        self.join('.')
+        to_str
       end
     end
 
+    def to_str
+      self.join('.')
+    end
+
     def inspect
-      "[#{self.join('.')}]"
+      "[#{to_str}]"
     end
 
     def encode
@@ -563,8 +570,12 @@ module SNMP
       @value = value
     end
 
+    ##
+    # Adds MIB information to this varbind for use with to_s.
+    #
     def with_mib(mib)
       @name.with_mib(mib) if @name
+      @value.with_mib(mib) if @value.respond_to? :with_mib
       self
     end
 

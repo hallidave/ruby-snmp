@@ -131,7 +131,6 @@ module SNMP
       option :mib_dir, :MibDir, MIB::DEFAULT_MIB_PATH
       option :mib_modules, :MibModules, default_modules
       option :use_IPv6, :use_IPv6, lambda { |c| ipv6_address?(c) }
-      option :oid_style, :oid_style, :symbols
 
       def create_transport
         transport.respond_to?(:new) ? transport.new(socket_address_family) : transport
@@ -189,7 +188,7 @@ module SNMP
       @retries = config.retries
       @transport = config.create_transport
       @max_bytes = config.max_recv_bytes
-      @mib = MIB.new(config.oid_style)
+      @mib = MIB.new
       load_modules(config.mib_modules, config.mib_dir)
       @config = config.applied_config
     end
@@ -568,7 +567,6 @@ module SNMP
       option :mib_dir, :MibDir, MIB::DEFAULT_MIB_PATH
       option :mib_modules, :MibModules, default_modules
       option :use_IPv6, :use_IPv6, false
-      option :oid_style, :oid_style, :symbols
 
       def create_transport
         server_transport.respond_to?(:new) ?
@@ -602,7 +600,7 @@ module SNMP
       @transport = config.create_transport
       @community = config.community
       @max_bytes = config.max_recv_bytes
-      @mib = MIB.new(config.oid_style)
+      @mib = MIB.new
       load_modules(config.mib_modules, config.mib_dir)
       @config = config.applied_config
 
