@@ -561,7 +561,7 @@ module SNMP
     class Config < Options
       option :host, :Host, 'localhost'
       option :port, :Port, 162
-      option :community, :Community, 'public'
+      option :community, :Community, nil
       option :server_transport, :ServerTransport, UDPServerTransport
       option :max_recv_bytes, :MaxReceiveBytes, 8000
       option :mib_dir, :MibDir, MIB::DEFAULT_MIB_PATH
@@ -594,6 +594,11 @@ module SNMP
     # 1. handler for a specific OID
     # 2. handler for a specific SNMP version
     # 3. default handler
+    #
+    # The default for the :community option is 'nil' allows traps with any
+    # community to be accepted. To only accept traps from a specific community,
+    # the community may also be set to a string (e.g. 'public') or a list of
+    # strings (e.g. ['public', 'my_private_community'] ).
     #
     def initialize(options={}, &block)
       config = Config.new(options)
@@ -687,7 +692,7 @@ module SNMP
         data, source_ip, source_port = @transport.recvfrom(@max_bytes)
         begin
           message = Message.decode(data, @mib)
-          if @community == message.community
+          if community_allowed? message.community
             trap = message.pdu
             if trap.kind_of?(InformRequest)
               @transport.send(message.response.encode, source_ip, source_port)
@@ -702,6 +707,10 @@ module SNMP
           p data
         end
       end
+    end
+
+    def community_allowed?(msg_community)
+      @community.nil? || @community == msg_community || !(Array(@community) & Array(msg_community)).empty?
     end
 
     def select_handler(trap)

@@ -289,15 +289,33 @@ class TestTrapListener < Test::Unit::TestCase
     assert(oid_called)
   end
 
-  def test_reject_wrong_community
+  ##
+  # Should filter traps with a 'public' community if that community is not accepted
+  #
+  def test_reject_community
+    assert !public_trap_passes?("test")
+    assert !public_trap_passes?(["foo", "bar"])
+    assert !public_trap_passes?([])
+  end
+
+  ##
+  # Should accept traps with a 'public' community if that community is allowed.
+  #
+  def test_accept_community
+    assert public_trap_passes? "public"
+    assert public_trap_passes? ["test", "public"]
+    assert public_trap_passes? nil
+  end
+
+  def public_trap_passes?(community_filter)
     default_called = false
     m = TrapListener.new(
-      :Community => "test",
-    :ServerTransport => TrapTestTransport.new) do |manager|
+        :community => community_filter,
+        :server_transport => TrapTestTransport.new) do |manager|
       manager.on_trap_default { default_called = true }
     end
     m.join
-    assert(!default_called)
+    default_called
   end
 
 end
