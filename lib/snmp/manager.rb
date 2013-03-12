@@ -292,6 +292,13 @@ module SNMP
       request = SetRequest.new(@@request_id.next, varbind_list)
       try_request(request, @write_community)
     end
+    
+    ##
+    # Uses the loaded mibs of the manager to build a varbind
+    # The second argument must be one of the SNMP::Varbind classes
+    def set_value(oid, value)
+      set(@mib.varbind(oid, value))
+    end
 
     ##
     # Sends an SNMPv1 style trap.
