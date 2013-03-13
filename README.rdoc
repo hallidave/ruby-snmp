@@ -26,6 +26,10 @@ examples below for more details.
 
 == Changes
 
+Changes for version 1.1.1:
+
+* Incorporate various small pull requests
+
 Changes for version 1.1.0:
 
 * Added MIB support to ObjectId and Varbind, so that to_s can return symbolic information
