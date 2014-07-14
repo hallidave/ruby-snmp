@@ -6,7 +6,7 @@ class TestProtocol < Test::Unit::TestCase
   include SNMP
 
   def test_message_decode_v1
-    message = SNMP::Message.decode("0'\002\001\000\004\006public\240\032\002\002\003\350\002\001\000\002\001\0000\0160\f\006\010+\006\001\002\001\001\001\000\005\000")
+    message = SNMP::Message.decode("0'\002\001\000\004\006public\240\032\002\002\003\350\002\001\000\002\001\0000\0160\f\006\010+\006\001\002\001\001\001\000\005\000".force_encoding('ASCII-8BIT'))
     assert_equal(:SNMPv1, message.version)
     assert_equal("public", message.community)
     assert_equal(SNMP::GetRequest, message.pdu.class)
@@ -17,7 +17,7 @@ class TestProtocol < Test::Unit::TestCase
   end
 
   def test_message_decode_v2c
-    message = SNMP::Message.decode("0)\002\001\001\004\006public\240\034\002\0040\265\020\202\002\001\000\002\001\0000\0160\f\006\010+\006\001\002\001\001\001\000\005\000")
+    message = SNMP::Message.decode("0)\002\001\001\004\006public\240\034\002\0040\265\020\202\002\001\000\002\001\0000\0160\f\006\010+\006\001\002\001\001\001\000\005\000".force_encoding('ASCII-8BIT'))
     assert_equal(:SNMPv2c, message.version)
     assert_equal("public", message.community)
     varbind_list = message.pdu.vb_list;
@@ -38,7 +38,7 @@ class TestProtocol < Test::Unit::TestCase
     list << varbind << varbind;
     pdu = SNMP::Response.new(12345, list)
     message = SNMP::Message.new(:SNMPv2c, "public", pdu)
-    assert_equal("07\002\001\001\004\006public\242*\002\00209\002\001\000\002\001\0000\0360\r\006\004+\006\211R\004\005value0\r\006\004+\006\211R\004\005value", message.encode)
+    assert_equal("07\002\001\001\004\006public\242*\002\00209\002\001\000\002\001\0000\0360\r\006\004+\006\211R\004\005value0\r\006\004+\006\211R\004\005value".force_encoding('ASCII-8BIT'), message.encode)
   end
 
   def test_get_request_from_single_string
@@ -102,7 +102,7 @@ class TestProtocol < Test::Unit::TestCase
 
   def test_get_bulk_encode
     request = SNMP::GetBulkRequest.new(1234, VarBindList.new, 0, 10)
-    assert_equal("\245\f\002\002\004\322\002\001\000\002\001\n0\000", request.encode)
+    assert_equal("\245\f\002\002\004\322\002\001\000\002\001\n0\000".force_encoding('ASCII-8BIT'), request.encode)
   end
 
   def test_error_status
@@ -124,7 +124,7 @@ class TestProtocol < Test::Unit::TestCase
     trap_oid_varbind = VarBind.new(ObjectId.new("1.3.6.1.6.3.1.1.4.1.0"),
                                    ObjectId.new("1.2.3"))
     trap = SNMPv2_Trap.new(42, VarBindList.new([sys_up_varbind, trap_oid_varbind]))
-    assert_equal("\247-\002\001*\002\001\000\002\001\0000\"0\016\006\010+\006\001\002\001\001\003\000C\002\004\3220\020\006\n+\006\001\006\003\001\001\004\001\000\006\002*\003", trap.encode)
+    assert_equal("\247-\002\001*\002\001\000\002\001\0000\"0\016\006\010+\006\001\002\001\001\003\000C\002\004\3220\020\006\n+\006\001\006\003\001\001\004\001\000\006\002*\003".force_encoding('ASCII-8BIT'), trap.encode)
     assert_equal(1234, trap.sys_up_time.to_i)
     assert_equal("1.2.3", trap.trap_oid.to_s)
   end
@@ -155,9 +155,9 @@ class TestProtocol < Test::Unit::TestCase
     generic_trap = :linkDown
     specific_trap = 0
     timestamp = TimeTicks.new(2176117721)
-    varbinds = VarBindList.new([VarBind.new("1.3.6.2", Integer.new(1))])
+    varbinds = VarBindList.new([VarBind.new("1.3.6.2", SNMP::Integer.new(1))])
     trap = SNMPv1_Trap.new(enterprise, agent_addr, generic_trap, specific_trap, timestamp, varbinds)
-    assert_equal("\244%\006\004+\006\001{@\004\001\002\003\004\002\001\002\002\001\000C\005\000\201\264\353\3310\n0\010\006\003+\006\002\002\001\001", trap.encode)
+    assert_equal("\244%\006\004+\006\001{@\004\001\002\003\004\002\001\002\002\001\000C\005\000\201\264\353\3310\n0\010\006\003+\006\002\002\001\001".force_encoding('ASCII-8BIT'), trap.encode)
 
     encoded = Message.new(:SNMPv1, "public", trap).encode
     trap = Message.decode(encoded).pdu
@@ -172,7 +172,7 @@ class TestProtocol < Test::Unit::TestCase
 
   def test_response_pdu
     pdu = Response.new(2147483647, VarBindList.new, :noError, 0)
-    assert_equal("\242\016\002\004\177\377\377\377\002\001\000\002\001\0000\000", pdu.encode)
+    assert_equal("\242\016\002\004\177\377\377\377\002\001\000\002\001\0000\000".force_encoding('ASCII-8BIT'), pdu.encode)
 
     encoded = Message.new(:SNMPv2c, "public", pdu).encode
     pdu = Message.decode(encoded).pdu

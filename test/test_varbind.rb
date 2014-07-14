@@ -318,10 +318,10 @@ class TestVarBind < Test::Unit::TestCase
   # Decode as a positive number even though high bit is set.
   # Not strict ASN.1, but implemented in some agents.
   def test_unsigned_decode
-    i = Counter32.decode("\201\264\353\331")
+    i = Counter32.decode("\201\264\353\331".force_encoding('ASCII-8BIT'))
     assert_equal(2176117721, i.to_i)
 
-    i = TimeTicks.decode("\201\264\353\331")
+    i = TimeTicks.decode("\201\264\353\331".force_encoding('ASCII-8BIT'))
     assert_equal(2176117721, i.to_i)
   end
 
@@ -329,8 +329,8 @@ class TestVarBind < Test::Unit::TestCase
     i = Counter64.new(18446744073709551615)
     assert_equal(18446744073709551615, i.to_i)
     assert_equal("18446744073709551615", i.to_s)
-    assert_equal("F\t\000\377\377\377\377\377\377\377\377", i.encode)
-    assert_equal(i, Counter64.decode("\000\377\377\377\377\377\377\377\377"))
+    assert_equal("F\t\000\377\377\377\377\377\377\377\377".force_encoding('ASCII-8BIT'), i.encode)
+    assert_equal(i, Counter64.decode("\000\377\377\377\377\377\377\377\377".force_encoding('ASCII-8BIT')))
     assert_not_nil(i.asn1_type)
   end
 
