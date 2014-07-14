@@ -57,11 +57,11 @@ class TestVarBind < Test::Unit::TestCase
 
     check_varbind_list_create(VarBindList.new(
                                 [VarBind.new("1.2.3.4.5", Null),
-                                 VarBind.new("1.2.3.4.6", Integer.new(123)),
+                                 VarBind.new("1.2.3.4.6", SNMP::Integer.new(123)),
                                  ObjectId.new("1.2.3.4.7")]
     ), 3)
 
-    list = VarBindList.new([VarBind.new("1.3.6.2", Integer.new(1))])
+    list = VarBindList.new([VarBind.new("1.3.6.2", SNMP::Integer.new(1))])
     assert_equal(1, list.length)
     assert_equal("1.3.6.2", list.first.name.to_s)
     assert_equal(1, list.first.value.to_i)
@@ -204,7 +204,7 @@ class TestVarBind < Test::Unit::TestCase
   end
 
   def test_integer_create
-    i = Integer.new(12345)
+    i = SNMP::Integer.new(12345)
     assert_equal("12345", i.to_s)
     assert_equal(12345, i.to_i)
     assert_equal("\002\00209", i.encode)
@@ -217,13 +217,13 @@ class TestVarBind < Test::Unit::TestCase
   end
 
   def test_integer_decode
-    i = Integer.decode("09")
+    i = SNMP::Integer.decode("09")
     assert_equal(12345, i.to_i)
   end
 
   def test_integer_equal
-    i1 = Integer.new(12345)
-    i2 = Integer.new(12345)
+    i1 = SNMP::Integer.new(12345)
+    i2 = SNMP::Integer.new(12345)
     i3 = 12345.2
     i4 = 12345
     assert_not_same(i1, i2)
@@ -234,8 +234,8 @@ class TestVarBind < Test::Unit::TestCase
   end
 
   def test_integer_comparable
-    i1 = Integer.new(12345)
-    i2 = Integer.new(54321.0)
+    i1 = SNMP::Integer.new(12345)
+    i2 = SNMP::Integer.new(54321.0)
     assert(i1 < i2)
     assert(i2 > i1)
     assert(123 < i1)
@@ -244,10 +244,10 @@ class TestVarBind < Test::Unit::TestCase
   end
 
   def test_integer_to_oid
-    assert_equal(ObjectId.new("123"), Integer.new(123).to_oid)
-    assert_equal(ObjectId.new("0"), Integer.new(0).to_oid)
+    assert_equal(ObjectId.new("123"), SNMP::Integer.new(123).to_oid)
+    assert_equal(ObjectId.new("0"), SNMP::Integer.new(0).to_oid)
 
-    i = Integer.new(-1)
+    i = SNMP::Integer.new(-1)
     assert_raise(RangeError) { i.to_oid }
   end
 
@@ -323,10 +323,10 @@ class TestVarBind < Test::Unit::TestCase
   # Decode as a positive number even though high bit is set.
   # Not strict ASN.1, but implemented in some agents.
   def test_unsigned_decode
-    i = Counter32.decode("\201\264\353\331")
+    i = Counter32.decode("\201\264\353\331".force_encoding('ASCII-8BIT'))
     assert_equal(2176117721, i.to_i)
 
-    i = TimeTicks.decode("\201\264\353\331")
+    i = TimeTicks.decode("\201\264\353\331".force_encoding('ASCII-8BIT'))
     assert_equal(2176117721, i.to_i)
   end
 
@@ -334,8 +334,8 @@ class TestVarBind < Test::Unit::TestCase
     i = Counter64.new(18446744073709551615)
     assert_equal(18446744073709551615, i.to_i)
     assert_equal("18446744073709551615", i.to_s)
-    assert_equal("F\t\000\377\377\377\377\377\377\377\377", i.encode)
-    assert_equal(i, Counter64.decode("\000\377\377\377\377\377\377\377\377"))
+    assert_equal("F\t\000\377\377\377\377\377\377\377\377".force_encoding('ASCII-8BIT'), i.encode)
+    assert_equal(i, Counter64.decode("\000\377\377\377\377\377\377\377\377".force_encoding('ASCII-8BIT')))
     assert_not_nil(i.asn1_type)
   end
 
