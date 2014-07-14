@@ -177,7 +177,7 @@ class TestManager < Test::Unit::TestCase
       :enterpriseSpecific,
       42,
       12345,
-      [VarBind.new("1.3.6.1.2.3.4", Integer.new(1))]
+      [VarBind.new("1.3.6.1.2.3.4", SNMP::Integer.new(1))]
     )
     pdu = Message.decode(sent_data).pdu
     assert_equal(ObjectId.new("1.3.6.1.4.1.9"), pdu.enterprise)
