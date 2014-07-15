@@ -7,3 +7,4 @@ pkg
 .rakeTasks
 Gemfile
 Gemfile.lock
+.ruby-version
