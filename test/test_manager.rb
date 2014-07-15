@@ -1,4 +1,4 @@
-require 'test/unit'
+require 'minitest/autorun'
 require 'snmp/manager'
 
 class EchoTransport
@@ -17,7 +17,7 @@ class EchoTransport
   end
 end
 
-class TestConfig < Test::Unit::TestCase
+class TestConfig < MiniTest::Unit::TestCase
 
   include SNMP
 
@@ -37,7 +37,7 @@ class TestConfig < Test::Unit::TestCase
   end
 
   def test_invalid_option
-    assert_raise(RuntimeError) { Manager::Config.new(:fly_to_the_moon => true) }
+    assert_raises(RuntimeError) { Manager::Config.new(:fly_to_the_moon => true) }
   end
 
   def test_ipv6_address_guessing
@@ -56,7 +56,7 @@ class TestConfig < Test::Unit::TestCase
   end
 end
 
-class TestManager < Test::Unit::TestCase
+class TestManager < MiniTest::Unit::TestCase
 
   include SNMP
 
@@ -104,7 +104,7 @@ class TestManager < Test::Unit::TestCase
   end
 
   def test_get_with_nil
-    assert_raise(ArgumentError) { @manager.get(nil) }
+    assert_raises(ArgumentError) { @manager.get(nil) }
   end
 
   def test_get_value
@@ -129,7 +129,7 @@ class TestManager < Test::Unit::TestCase
   end
 
   def test_get_next_with_nil
-    assert_raise(ArgumentError) { @manager.get_next(nil) }
+    assert_raises(ArgumentError) { @manager.get_next(nil) }
   end
 
   def test_set
@@ -141,7 +141,7 @@ class TestManager < Test::Unit::TestCase
   end
  
   def test_set_with_nil
-    assert_raise(ArgumentError) { @manager.set(nil) }
+    assert_raises(ArgumentError) { @manager.set(nil) }
   end
 
   def test_single_set
@@ -160,7 +160,7 @@ class TestManager < Test::Unit::TestCase
   end
 
   def test_get_bulk_with_nil
-    assert_raise(ArgumentError) { @manager.get_bulk(nil, nil, nil) }
+    assert_raises(ArgumentError) { @manager.get_bulk(nil, nil, nil) }
   end
 
   def test_walk
@@ -172,7 +172,7 @@ class TestManager < Test::Unit::TestCase
   end
 
   def test_walk_with_nil
-    assert_raise(ArgumentError) { @manager.walk(nil) {} }
+    assert_raises(ArgumentError) { @manager.walk(nil) {} }
   end
 
   def test_request_id
@@ -185,8 +185,8 @@ class TestManager < Test::Unit::TestCase
     id.force_next(RequestId::MAX_REQUEST_ID-1)
     assert_equal(RequestId::MAX_REQUEST_ID-1, id.next)
 
-    assert_raise(RuntimeError) { id.force_next(RequestId::MAX_REQUEST_ID) }
-    assert_raise(RuntimeError) { id.force_next(0) }
+    assert_raises(RuntimeError) { id.force_next(RequestId::MAX_REQUEST_ID) }
+    assert_raises(RuntimeError) { id.force_next(0) }
   end
 
   def test_trap_v1
@@ -209,7 +209,7 @@ class TestManager < Test::Unit::TestCase
   end
 
   def test_trap_v1_with_nil
-    assert_raise(ArgumentError) { @manager.trap_v1(nil) }
+    assert_raises(ArgumentError) { @manager.trap_v1(nil) }
   end
 
   def test_trap_v2
@@ -228,7 +228,7 @@ class TestManager < Test::Unit::TestCase
   end
 
   def test_trap_v2_with_nil
-    assert_raise(ArgumentError) { @manager.trap_v2(nil, nil, nil) }
+    assert_raises(ArgumentError) { @manager.trap_v2(nil, nil, nil) }
   end
 
   def test_inform
@@ -274,7 +274,7 @@ class TrapTestTransport
 end
 
 
-class TestTrapListener < Test::Unit::TestCase
+class TestTrapListener < MiniTest::Unit::TestCase
   include SNMP
 
   def test_init_no_handlers

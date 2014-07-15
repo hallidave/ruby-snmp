@@ -1,9 +1,9 @@
-require 'test/unit'
+require 'minitest/autorun'
 
 begin
   require 'smi'
 
-  class TestSmi < Test::Unit::TestCase
+  class TestSmi < MiniTest::Unit::TestCase
 
     include SNMP::SMI
 

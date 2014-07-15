@@ -1,7 +1,7 @@
 require 'snmp/pdu'
-require 'test/unit'
+require 'minitest/autorun'
 
-class TestProtocol < Test::Unit::TestCase
+class TestProtocol < MiniTest::Unit::TestCase
 
   include SNMP
 
@@ -27,7 +27,7 @@ class TestProtocol < Test::Unit::TestCase
   end
 
   def test_message_decoder_v3
-    assert_raise(SNMP::UnsupportedVersion) do
+    assert_raises(SNMP::UnsupportedVersion) do
       SNMP::Message.decode("0>\002\001\0030\021\002\004&\266\342\314\002\003\000\377\343\004\001\004\002\001\003\004\0200\016\004\000\002\001\000\002\001\000\004\000\004\000\004\0000\024\004\000\004\000\240\016\002\004\v\3623\233\002\001\000\002\001\0000\000")
     end
   end
@@ -115,7 +115,7 @@ class TestProtocol < Test::Unit::TestCase
     request.error_status = 2
     assert_equal(:noSuchName, request.error_status)
 
-    assert_raise(InvalidErrorStatus) {request.error_status = 42}
+    assert_raises(InvalidErrorStatus) {request.error_status = 42}
   end
 
   def test_snmpv2_trap
@@ -131,8 +131,8 @@ class TestProtocol < Test::Unit::TestCase
 
   def test_snmpv2_invalid_trap
     trap = SNMPv2_Trap.new(42, VarBindList.new([]))
-    assert_raise(InvalidTrapVarbind) { trap.sys_up_time }
-    assert_raise(InvalidTrapVarbind) { trap.trap_oid }
+    assert_raises(InvalidTrapVarbind) { trap.sys_up_time }
+    assert_raises(InvalidTrapVarbind) { trap.trap_oid }
   end
 
   def test_snmpv1_generic_trap
@@ -145,8 +145,8 @@ class TestProtocol < Test::Unit::TestCase
     trap.generic_trap = 6
     assert_equal(:enterpriseSpecific, trap.generic_trap)
 
-    assert_raise(InvalidGenericTrap) { trap.generic_trap = -1 }
-    assert_raise(InvalidGenericTrap) { trap.generic_trap = 7 }
+    assert_raises(InvalidGenericTrap) { trap.generic_trap = -1 }
+    assert_raises(InvalidGenericTrap) { trap.generic_trap = 7 }
   end
 
   def test_snmpv1_trap_encode

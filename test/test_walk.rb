@@ -1,5 +1,5 @@
 require 'snmp'
-require 'test/unit'
+require 'minitest/autorun'
 require 'yaml'
 
 include SNMP
@@ -65,7 +65,7 @@ class YamlDataTransport
   end
 end
 
-class TestTransport < Test::Unit::TestCase
+class TestTransport < MiniTest::Unit::TestCase
 
   def test_get
     YamlDataTransport.load_data(File.dirname(__FILE__) + "/if_table6.yaml")
@@ -85,7 +85,7 @@ class TestTransport < Test::Unit::TestCase
 
 end
 
-class TestWalk < Test::Unit::TestCase
+class TestWalk < MiniTest::Unit::TestCase
 
   ##
   # A single string or single ObjectId can be passed to walk()

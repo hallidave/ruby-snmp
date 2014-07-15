@@ -1,14 +1,14 @@
 require 'snmp/varbind'
-require 'test/unit'
+require 'minitest/autorun'
 
-class TestVarBind < Test::Unit::TestCase
+class TestVarBind < MiniTest::Unit::TestCase
 
   include SNMP
 
   def test_varbind_encode
     v = VarBind.new([1,3,6,1], OctetString.new("test"))
     assert_equal("0\v\006\003+\006\001\004\004test", v.encode)
-    assert_not_nil(v.asn1_type)
+    refute_nil(v.asn1_type)
     assert_equal("[name=1.3.6.1, value=test (OCTET STRING)]", v.to_s)
   end
 
@@ -76,7 +76,7 @@ class TestVarBind < Test::Unit::TestCase
   def test_varbind_list_encode
     list = VarBindList.new
     assert_equal("0\000", list.encode)
-    assert_not_nil(list.asn1_type)
+    refute_nil(list.asn1_type)
 
     list << VarBind.new([1,3,6,1], OctetString.new("test"))
     assert_equal("0\r0\v\006\003+\006\001\004\004test", list.encode)
@@ -103,7 +103,7 @@ class TestVarBind < Test::Unit::TestCase
     string = OctetString.new("test")
     assert_equal("test", string.to_s)
     assert_equal("\004\004test", string.encode)
-    assert_not_nil(string.asn1_type)
+    refute_nil(string.asn1_type)
   end
 
   def test_octet_string_equals
@@ -112,7 +112,7 @@ class TestVarBind < Test::Unit::TestCase
     s3 = OctetString.new("test")
     assert_equal(s1, s2)
     assert(s1 == s2)
-    assert_not_same(s1, s3)
+    refute_same(s1, s3)
     assert_equal(s1, s3)
   end
 
@@ -125,10 +125,10 @@ class TestVarBind < Test::Unit::TestCase
     id = ObjectId.new([1,3,6,1])
     assert_equal("1.3.6.1", id.to_s)
     assert_equal("\006\003+\006\001", id.encode)
-    assert_not_nil(id.asn1_type)
+    refute_nil(id.asn1_type)
     assert_equal("1.3.6.1", id.to_varbind.name.to_s)
 
-    assert_raise(ArgumentError) {
+    assert_raises(ArgumentError) {
       ObjectId.new("xyzzy")
     }
 
@@ -153,7 +153,7 @@ class TestVarBind < Test::Unit::TestCase
   def test_object_id_equals
     id1 = ObjectId.new("1.3.3.4")
     id2 = ObjectId.new([1,3,3,4])
-    assert_not_same(id1, id2)
+    refute_same(id1, id2)
     assert(id1 == id2)
     assert_equal(id1, id2)
   end
@@ -193,8 +193,8 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal(ObjectId.new("1"), id2.index(id1))
     assert_equal(ObjectId.new("1.2"), id3.index(id1))
     assert_equal(ObjectId.new("1.2"), id3.index("1.3.3.4"))
-    assert_raise(ArgumentError) { id1.index(id3) }
-    assert_raise(ArgumentError) { id1.index(id1) }
+    assert_raises(ArgumentError) { id1.index(id3) }
+    assert_raises(ArgumentError) { id1.index(id1) }
   end
 
   def test_object_name_from_string
@@ -208,7 +208,7 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal("12345", i.to_s)
     assert_equal(12345, i.to_i)
     assert_equal("\002\00209", i.encode)
-    assert_not_nil(i.asn1_type)
+    refute_nil(i.asn1_type)
   end
 
   def test_integer_create_from_string
@@ -226,7 +226,7 @@ class TestVarBind < Test::Unit::TestCase
     i2 = SNMP::Integer.new(12345)
     i3 = 12345.2
     i4 = 12345
-    assert_not_same(i1, i2)
+    refute_same(i1, i2)
     assert_equal(i1, i2)
     assert_equal(i4, i1)
     assert_equal(i1, i4)
@@ -248,15 +248,15 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal(ObjectId.new("0"), SNMP::Integer.new(0).to_oid)
 
     i = SNMP::Integer.new(-1)
-    assert_raise(RangeError) { i.to_oid }
+    assert_raises(RangeError) { i.to_oid }
   end
 
   def test_ip_address_from_string
     ip = IpAddress.new("10.0.255.1")
     assert_equal("10.0.255.1", ip.to_s)
-    assert_raise(InvalidIpAddress) { IpAddress.new("1233.2.3.4") }
-    assert_raise(InvalidIpAddress) { IpAddress.new("1.2.3.-1") }
-    assert_raise(InvalidIpAddress) { IpAddress.new("1.2.3") }
+    assert_raises(InvalidIpAddress) { IpAddress.new("1233.2.3.4") }
+    assert_raises(InvalidIpAddress) { IpAddress.new("1.2.3.-1") }
+    assert_raises(InvalidIpAddress) { IpAddress.new("1.2.3") }
   end
 
   def test_ip_address_from_self
@@ -270,7 +270,7 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal("1.2.3.4", ip.to_s)
     assert_equal("\001\002\003\004", ip.to_str)
     assert_equal("@\004\001\002\003\004", ip.encode)
-    assert_not_nil(ip.asn1_type)
+    refute_nil(ip.asn1_type)
   end
 
   def test_ip_address_decode
@@ -312,7 +312,7 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal("12345", i.to_s)
     assert_equal(12345, i.to_i)
     assert_equal("\x41\00209", i.encode)
-    assert_not_nil(i.asn1_type)
+    refute_nil(i.asn1_type)
   end
 
   def test_counter32_decode
@@ -336,7 +336,7 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal("18446744073709551615", i.to_s)
     assert_equal("F\t\000\377\377\377\377\377\377\377\377".force_encoding('ASCII-8BIT'), i.encode)
     assert_equal(i, Counter64.decode("\000\377\377\377\377\377\377\377\377".force_encoding('ASCII-8BIT')))
-    assert_not_nil(i.asn1_type)
+    refute_nil(i.asn1_type)
   end
 
   def test_opaque
@@ -344,7 +344,7 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal("D\004test", q.encode)
     assert_equal("test", Opaque.decode("test"))
     assert_equal("test", q.to_s)
-    assert_not_nil(q.asn1_type)
+    refute_nil(q.asn1_type)
   end
 
   def test_exception_methods
@@ -368,10 +368,10 @@ class TestVarBind < Test::Unit::TestCase
     assert_equal("2 days, 00:00:00.00", TimeTicks.new(48 * 60 * 60 * 100).to_s)
     assert_equal("497 days, 02:27:52.95", TimeTicks.new(4294967295).to_s)
     assert_equal(4294967295, TimeTicks.new(4294967295).to_i)
-    assert_raise(ArgumentError) {
+    assert_raises(ArgumentError) {
       TimeTicks.new(4294967296)
     }
-    assert_raise(ArgumentError) {
+    assert_raises(ArgumentError) {
       TimeTicks.new(-1)
     }
   end

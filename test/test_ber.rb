@@ -1,10 +1,10 @@
 # encoding: ascii-8bit
 
-require 'test/unit'
+require 'minitest/autorun'
 require 'snmp/varbind'
 require 'snmp/ber'
 
-class ASN1_Test < Test::Unit::TestCase
+class ASN1_Test < MiniTest::Unit::TestCase
 
   include SNMP::BER
 
@@ -56,20 +56,20 @@ class ASN1_Test < Test::Unit::TestCase
 
   # Check invalid length - ASN.1 says that first length octet can't be 255.
   def test_bad_length
-    assert_raise(InvalidLength) {
+    assert_raises(InvalidLength) {
       decode_tlv("\001\377\001")
     }
   end
 
   # Check if input data is too short
   def test_out_of_data
-    assert_raise(OutOfData) {
+    assert_raises(OutOfData) {
       decode_tlv("\001\001")
     }
-    assert_raise(OutOfData) {
+    assert_raises(OutOfData) {
       decode_tlv("\001")
     }
-    assert_raise(OutOfData) {
+    assert_raises(OutOfData) {
       decode_tlv("")
     }
   end
@@ -103,7 +103,7 @@ class ASN1_Test < Test::Unit::TestCase
     assert_equal(255, i)
     assert_equal("", data)
 
-    assert_raise(InvalidTag) {
+    assert_raises(InvalidTag) {
       decode_integer("\001\004\001\002\003\004")
     }
   end
@@ -113,7 +113,7 @@ class ASN1_Test < Test::Unit::TestCase
     assert_equal(16909060, i)
     assert_equal("", data)
 
-    assert_raise(InvalidTag) {
+    assert_raises(InvalidTag) {
       decode_timeticks("\002\004\001\002\003\004")
     }
   end
@@ -122,7 +122,7 @@ class ASN1_Test < Test::Unit::TestCase
   def test_decode_octet_string
     s, _ = decode_octet_string("\004\202\000\005hello")
     assert_equal("hello",s)
-    assert_raise(InvalidTag) {
+    assert_raises(InvalidTag) {
       decode_octet_string("\005\202\000\005hello")
     }
   end
@@ -130,10 +130,10 @@ class ASN1_Test < Test::Unit::TestCase
   def test_decode_ip_address
     ip, _ = decode_ip_address("@\004\001\002\003\004")
     assert_equal(ip, "\001\002\003\004")
-    assert_raise(InvalidTag) {
+    assert_raises(InvalidTag) {
       decode_ip_address("\004\004\001\002\003\004")
     }
-    assert_raise(InvalidLength) {
+    assert_raises(InvalidLength) {
       decode_ip_address("@\005\001\002\003\004\005")
     }
   end
@@ -148,7 +148,7 @@ class ASN1_Test < Test::Unit::TestCase
     assert_equal("\002\001\077", seq)
     assert_equal("\002\001\001", data)
 
-    assert_raise(InvalidTag) {
+    assert_raises(InvalidTag) {
       decode_sequence("\061\003\002\001\077")
     }
   end
@@ -180,7 +180,7 @@ class ASN1_Test < Test::Unit::TestCase
     assert_equal([0,0], object_id);
     assert_equal("", remainder)
 
-    assert_raise(InvalidTag) do
+    assert_raises(InvalidTag) do
       decode_object_id("\007\001+")
     end
   end
@@ -191,7 +191,7 @@ class ASN1_Test < Test::Unit::TestCase
     assert_equal("\177", encode_length(127))
     assert_equal("\201\200", encode_length(128))
     assert_equal("\202\002\001", encode_length(513))
-    assert_raise(InvalidLength) { encode_length(-1) }
+    assert_raises(InvalidLength) { encode_length(-1) }
   end
 
   def test_encode_integer
@@ -232,8 +232,8 @@ class ASN1_Test < Test::Unit::TestCase
     assert_equal("\006\002+\006", encode_object_id([1,3,6]))
     assert_equal("\006\003+\202\001", encode_object_id([1,3,257]))
     assert_equal("\006\003" << 82.chr << "\202\001", encode_object_id([2,2,257]))
-    assert_raise(InvalidObjectId) { encode_object_id([3,2,257]) }
-    assert_raise(InvalidObjectId) { encode_object_id([]) }
+    assert_raises(InvalidObjectId) { encode_object_id([3,2,257]) }
+    assert_raises(InvalidObjectId) { encode_object_id([]) }
 
     assert_equal("\006\a+\203\377\177\203\377\177",
                  encode_object_id(SNMP::ObjectId.new("1.3.65535.65535")))

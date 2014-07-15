@@ -1,4 +1,4 @@
-require 'test/unit'
+require 'minitest/autorun'
 require 'snmp'
 
 class TimeoutManager  < SNMP::Manager
@@ -53,7 +53,7 @@ class MismatchIdTransport
 end
 
 
-class TestRetry < Test::Unit::TestCase
+class TestRetry < MiniTest::Unit::TestCase
   def test_retry_count
     assert_response_count(0, 1, SNMP::RequestTimeout)
     assert_response_count(1, 2, SNMP::RequestTimeout)
@@ -71,7 +71,7 @@ class TestRetry < Test::Unit::TestCase
   def assert_response_count(retry_count, response_count, exception)
     m = TimeoutManager.new( :Retries => retry_count )
     yield m if block_given?
-    assert_raise(exception) { m.get("1.2.3.4") }
+    assert_raises(exception) { m.get("1.2.3.4") }
     assert_equal(response_count, m.response_count)
   end
 

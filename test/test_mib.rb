@@ -1,9 +1,9 @@
+require 'minitest/autorun'
 require 'snmp/mib'
-require 'test/unit'
 
 module SNMP
 
-  class TestMib < Test::Unit::TestCase
+  class TestMib < MiniTest::Unit::TestCase
 
     def setup
       @mib = MIB.new
@@ -28,15 +28,15 @@ module SNMP
       oid = @mib.oid("IF-MIB::ifTable.1.23")
       assert_equal("1.3.6.1.2.1.2.2.1.23", oid.to_s)
 
-      assert_raise(MIB::ModuleNotLoadedError) {
+      assert_raises(MIB::ModuleNotLoadedError) {
         @mib.oid("IFMIB::ifTable.1.23")
       }
 
-      assert_raise(ArgumentError) {
+      assert_raises(ArgumentError) {
         @mib.oid("IF-MIB::")
       }
 
-      assert_raise(ArgumentError) {
+      assert_raises(ArgumentError) {
         MIB.new.oid("sysDescr.0")
       }
 
@@ -58,7 +58,7 @@ module SNMP
     end
 
     def test_varbind_list_with_nil
-      assert_raise(ArgumentError) { @mib.varbind_list(nil) }
+      assert_raises(ArgumentError) { @mib.varbind_list(nil) }
     end
 
     def test_varbind
