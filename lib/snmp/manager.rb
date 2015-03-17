@@ -144,6 +144,7 @@ module SNMP
       option :mib_dir, :MibDir, MIB::DEFAULT_MIB_PATH
       option :mib_modules, :MibModules, default_modules
       option :use_IPv6, :use_IPv6, lambda { |c| ipv6_address?(c) }
+      option :ignore_oid_order, :IgnoreOidOrder, false
 
       def create_transport
         transport.respond_to?(:new) ? transport.new(socket_address_family) : transport
@@ -183,6 +184,7 @@ module SNMP
     #   :mib_dir            MIB::DEFAULT_MIB_PATH
     #   :mib_modules        SNMPv2-SMI, SNMPv2-MIB, IF-MIB, IP-MIB, TCP-MIB, UDP-MIB
     #   :use_IPv6           false, unless :host is formatted like an IPv6 address
+    #   :ignore_oid_order   false
     #
     # Use {:version => :SNMPv1} for SNMP v1.  SNMP v3 is not supported.
     #
@@ -203,6 +205,7 @@ module SNMP
       @max_bytes = config.max_recv_bytes
       @mib = MIB.new
       load_modules(config.mib_modules, config.mib_dir)
+      @ignore_oid_order = config.ignore_oid_order
       @config = config.applied_config
     end
 
@@ -440,7 +443,7 @@ module SNMP
         index_vb = vb_list[index_column]
         break if EndOfMibView == index_vb.value
         stop_oid = index_vb.name
-        if stop_oid <= last_oid
+        if !@ignore_oid_order && stop_oid <= last_oid
           warn "OIDs are not increasing, #{last_oid} followed by #{stop_oid}"
           break
         end
