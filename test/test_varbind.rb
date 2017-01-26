@@ -214,7 +214,7 @@ class TestVarBind < MiniTest::Unit::TestCase
   end
 
   def test_integer_create_from_string
-    i = Integer.new("12345")
+    i = SNMP::Integer.new("12345")
     assert_equal(12345, i.to_i)
   end
 
