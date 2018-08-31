@@ -1,6 +1,7 @@
 = SNMP Library for Ruby
 {<img src="https://travis-ci.com/hallidave/ruby-snmp.svg?branch=master" alt="Build Status" />}[https://travis-ci.com/hallidave/ruby-snmp]
 {<img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License MIT" />}[https://raw.githubusercontent.com/hallidave/ruby-snmp/master/MIT-LICENSE]
+{<img src="https://badge.fury.io/rb/snmp.svg" alt="Gem Version" />}[https://badge.fury.io/rb/snmp]
 
 == Summary
 
@@ -8,8 +9,6 @@ This library implements SNMP (the Simple Network Management Protocol).  It is
 implemented in pure Ruby, so there are no dependencies on external libraries
 like net-snmp[http://www.net-snmp.org/].  You can run this library anywhere
 that Ruby can run.
-
-See snmplib.rubyforge.org[http://snmplib.rubyforge.org/] for more info.
 
 This release supports the following:
 
@@ -27,6 +26,10 @@ See the SNMP::Manager, SNMP::TrapListener, and SNMP::MIB classes and the
 examples below for more details.
 
 == Changes
+
+Changes for version 1.3.0:
+* Cleaned up deprecation warnings
+* Fixed SNMP::Integer#<=> method for Ruby 2.3.0 and later
 
 Changes for version 1.2.0:
 * Removed support for Ruby 1.8

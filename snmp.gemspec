@@ -24,6 +24,7 @@ Gem::Specification.new do |s|
     s.description = "A Ruby implementation of SNMP (the Simple Network Management Protocol)."
     s.author = 'Dave Halliday'
     s.email = 'hallidave@gmail.com'
-    s.rubyforge_project = 'snmplib'
-    s.homepage = 'http://snmplib.rubyforge.org'
+    s.homepage = 'https://github.com/hallidave/ruby-snmp'
+    s.license = 'MIT'
+    s.required_ruby_version = '>= 1.9.0'
 end
