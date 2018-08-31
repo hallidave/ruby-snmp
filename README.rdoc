@@ -1,4 +1,6 @@
 = SNMP Library for Ruby
+{<img src="https://travis-ci.com/hallidave/ruby-snmp.svg?branch=master" alt="Build Status" />}[https://travis-ci.com/hallidave/ruby-snmp]
+{<img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License MIT" />}[https://raw.githubusercontent.com/hallidave/ruby-snmp/master/MIT-LICENSE]
 
 == Summary
 
