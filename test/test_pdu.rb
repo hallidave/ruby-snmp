@@ -3,7 +3,7 @@
 require 'snmp/pdu'
 require 'minitest/autorun'
 
-class TestProtocol < MiniTest::Unit::TestCase
+class TestProtocol < Minitest::Test
 
   include SNMP
 

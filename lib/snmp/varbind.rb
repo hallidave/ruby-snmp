@@ -86,11 +86,12 @@ module SNMP
     end
 
     def <=>(other)
+      return nil unless other.respond_to? :to_i
       @value <=> other.to_i
     end
 
     def coerce(other)
-      if other.kind_of? Fixnum
+      if other.kind_of? ::Integer
         return [other, @value]
       else
         return [other.to_f, self.to_f]

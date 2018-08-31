@@ -4,7 +4,7 @@ require 'minitest/autorun'
 require 'snmp/varbind'
 require 'snmp/ber'
 
-class ASN1_Test < MiniTest::Unit::TestCase
+class ASN1_Test < Minitest::Test
 
   include SNMP::BER
 

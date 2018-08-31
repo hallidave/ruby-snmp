@@ -3,7 +3,7 @@ require 'snmp/mib'
 
 module SNMP
 
-  class TestMib < MiniTest::Unit::TestCase
+  class TestMib < Minitest::Test
 
     def setup
       @mib = MIB.new

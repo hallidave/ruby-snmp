@@ -53,7 +53,7 @@ class MismatchIdTransport
 end
 
 
-class TestRetry < MiniTest::Unit::TestCase
+class TestRetry < Minitest::Test
   def test_retry_count
     assert_response_count(0, 1, SNMP::RequestTimeout)
     assert_response_count(1, 2, SNMP::RequestTimeout)

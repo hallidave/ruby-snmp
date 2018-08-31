@@ -3,7 +3,7 @@
 require 'snmp/varbind'
 require 'minitest/autorun'
 
-class TestVarBind < MiniTest::Unit::TestCase
+class TestVarBind < Minitest::Test
 
   include SNMP
 
@@ -243,6 +243,8 @@ class TestVarBind < MiniTest::Unit::TestCase
     assert(123 < i1)
     assert(123.0 < i1)
     assert(i2 > 54000)
+    assert(i1 != NoSuchInstance)
+    assert(NoSuchInstance != i1)
   end
 
   def test_integer_to_oid

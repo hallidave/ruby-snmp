@@ -17,7 +17,7 @@ class EchoTransport
   end
 end
 
-class TestConfig < MiniTest::Unit::TestCase
+class TestConfig < Minitest::Test
 
   include SNMP
 
@@ -56,7 +56,7 @@ class TestConfig < MiniTest::Unit::TestCase
   end
 end
 
-class TestManager < MiniTest::Unit::TestCase
+class TestManager < Minitest::Test
 
   include SNMP
 
@@ -274,7 +274,7 @@ class TrapTestTransport
 end
 
 
-class TestTrapListener < MiniTest::Unit::TestCase
+class TestTrapListener < Minitest::Test
   include SNMP
 
   def test_init_no_handlers
