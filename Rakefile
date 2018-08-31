@@ -5,6 +5,8 @@ require 'rake/clean'
 require 'rdoc/task'
 require 'rubygems/package_task'
 
+task :default => [:test]
+
 # test target
 Rake::TestTask.new do |test|
     test.libs  << "lib"
