@@ -22,14 +22,15 @@
 
 require 'snmp/ber'
 
-include SNMP::BER
-
 module SNMP
 
   class UnsupportedValueTag < RuntimeError; end
   class InvalidIpAddress < ArgumentError; end
 
   class VarBindList < Array
+    include SNMP::BER::Encode
+    extend SNMP::BER::Decode
+
     def self.decode(data, mib=nil)
       list = VarBindList.new
       varbind_data, remainder = decode_sequence(data)
@@ -71,6 +72,8 @@ module SNMP
   end
 
   class Integer
+    include SNMP::BER::Encode
+    extend SNMP::BER::Decode
     include Comparable
 
     def self.decode(value_data)
@@ -129,6 +132,7 @@ module SNMP
   end
 
   class OctetString < String
+    include SNMP::BER::Encode
     def self.decode(value_data)
       OctetString.new(value_data)
     end
@@ -149,6 +153,8 @@ module SNMP
   end
 
   class ObjectId < Array
+    include SNMP::BER::Encode
+    extend SNMP::BER::Decode
     include Comparable
 
     def self.decode(value_data, mib=nil)
@@ -259,6 +265,8 @@ module SNMP
   end
 
   class IpAddress
+    include SNMP::BER::Encode
+
     class << self
       def decode(value_data)
         IpAddress.new(value_data, false)
@@ -326,7 +334,7 @@ module SNMP
     end
 
     def encode
-      encode_tlv(IpAddress_TAG, @value)
+      encode_tlv(BER::IpAddress_TAG, @value)
     end
 
     private
@@ -365,7 +373,7 @@ module SNMP
     end
 
     def encode
-      encode_tagged_integer(Counter32_TAG, @value)
+      encode_tagged_integer(BER::Counter32_TAG, @value)
     end
   end
 
@@ -375,7 +383,7 @@ module SNMP
     end
 
     def encode
-      encode_tagged_integer(Gauge32_TAG, @value)
+      encode_tagged_integer(BER::Gauge32_TAG, @value)
     end
   end
 
@@ -385,7 +393,7 @@ module SNMP
     end
 
     def encode
-      encode_tagged_integer(Unsigned32_TAG, @value)
+      encode_tagged_integer(BER::Unsigned32_TAG, @value)
     end
   end
 
@@ -395,7 +403,7 @@ module SNMP
     end
 
     def encode
-      encode_tagged_integer(TimeTicks_TAG, @value)
+      encode_tagged_integer(BER::TimeTicks_TAG, @value)
     end
 
     def to_s
@@ -427,7 +435,7 @@ module SNMP
     end
 
     def encode
-      encode_tlv(Opaque_TAG, self)
+      encode_tlv(BER::Opaque_TAG, self)
     end
   end
 
@@ -447,11 +455,13 @@ module SNMP
     end
 
     def encode
-      encode_tagged_integer(Counter64_TAG, @value)
+      encode_tagged_integer(BER::Counter64_TAG, @value)
     end
   end
 
   class Null
+    extend SNMP::BER::Encode
+
     class << self
       def decode(value_data)
         Null
@@ -472,13 +482,15 @@ module SNMP
   end
 
   class NoSuchObject
+    extend SNMP::BER::Encode
+
     class << self
       def decode(value_data)
         NoSuchObject
       end
 
       def encode
-        encode_exception(NoSuchObject_TAG)
+        encode_exception(BER::NoSuchObject_TAG)
       end
 
       def asn1_type
@@ -492,13 +504,15 @@ module SNMP
   end
 
   class NoSuchInstance
+    extend SNMP::BER::Encode
+
     class << self
       def decode(value_data)
         NoSuchInstance
       end
 
       def encode
-        encode_exception(NoSuchInstance_TAG)
+        encode_exception(BER::NoSuchInstance_TAG)
       end
 
       def asn1_type
@@ -512,13 +526,15 @@ module SNMP
   end
 
   class EndOfMibView
+    extend SNMP::BER::Encode
+
     class << self
       def decode(value_data)
         EndOfMibView
       end
 
       def encode
-        encode_exception(EndOfMibView_TAG)
+        encode_exception(BER::EndOfMibView_TAG)
       end
 
       def asn1_type
@@ -532,6 +548,9 @@ module SNMP
   end
 
   class VarBind
+    include SNMP::BER::Encode
+    extend SNMP::BER::Decode
+
     attr_accessor :name
     attr_accessor :value
 
@@ -547,20 +566,20 @@ module SNMP
       end
 
       ValueDecoderMap = {
-        INTEGER_TAG           => Integer,
-        OCTET_STRING_TAG      => OctetString,
-        NULL_TAG              => Null,
-        OBJECT_IDENTIFIER_TAG => ObjectId,
-        IpAddress_TAG         => IpAddress,
-        Counter32_TAG         => Counter32,
-        Gauge32_TAG           => Gauge32,
+        BER::INTEGER_TAG           => Integer,
+        BER::OCTET_STRING_TAG      => OctetString,
+        BER::NULL_TAG              => Null,
+        BER::OBJECT_IDENTIFIER_TAG => ObjectId,
+        BER::IpAddress_TAG         => IpAddress,
+        BER::Counter32_TAG         => Counter32,
+        BER::Gauge32_TAG           => Gauge32,
         # note Gauge32 tag same as Unsigned32
-        TimeTicks_TAG         => TimeTicks,
-        Opaque_TAG            => Opaque,
-        Counter64_TAG         => Counter64,
-        NoSuchObject_TAG      => NoSuchObject,
-        NoSuchInstance_TAG    => NoSuchInstance,
-        EndOfMibView_TAG      => EndOfMibView
+        BER::TimeTicks_TAG         => TimeTicks,
+        BER::Opaque_TAG            => Opaque,
+        BER::Counter64_TAG         => Counter64,
+        BER::NoSuchObject_TAG      => NoSuchObject,
+        BER::NoSuchInstance_TAG    => NoSuchInstance,
+        BER::EndOfMibView_TAG      => EndOfMibView
       }
 
       def decode_value(data)

@@ -23,8 +23,6 @@
 require 'snmp/ber'
 require 'snmp/varbind'
 
-include SNMP::BER
-
 module SNMP
 
   # Exceptions thrown during message/pdu decoding
@@ -40,6 +38,9 @@ module SNMP
   SNMP_TRAP_OID_OID = ObjectId.new("1.3.6.1.6.3.1.1.4.1.0")
 
   class Message
+    include SNMP::BER::Encode
+    extend SNMP::BER::Decode
+
     attr_reader :version
     attr_reader :community
     attr_reader :pdu
@@ -57,9 +58,9 @@ module SNMP
 
       def decode_version(data)
         version_data, remainder = decode_integer(data)
-        if version_data == SNMP_V1
+        if version_data == BER::SNMP_V1
           version = :SNMPv1
-        elsif version_data == SNMP_V2C
+        elsif version_data == BER::SNMP_V2C
           version = :SNMPv2c
         else
           raise UnsupportedVersion, version_data.to_s
@@ -70,24 +71,24 @@ module SNMP
       def decode_pdu(version, data, mib=nil)
         pdu_tag, pdu_data, remainder = decode_tlv(data)
         case pdu_tag
-        when GetRequest_PDU_TAG
+        when BER::GetRequest_PDU_TAG
           pdu = PDU.decode(GetRequest, pdu_data, mib)
-        when GetNextRequest_PDU_TAG
+        when BER::GetNextRequest_PDU_TAG
           pdu = PDU.decode(GetNextRequest, pdu_data, mib)
-        when Response_PDU_TAG
+        when BER::Response_PDU_TAG
           pdu = PDU.decode(Response, pdu_data, mib)
-        when SetRequest_PDU_TAG
+        when BER::SetRequest_PDU_TAG
           pdu = PDU.decode(SetRequest, pdu_data, mib)
-        when SNMPv1_Trap_PDU_TAG
+        when BER::SNMPv1_Trap_PDU_TAG
           raise InvalidPduTag, "SNMPv1-trap not valid for #{version.to_s}" if version != :SNMPv1
           pdu = SNMPv1_Trap.decode(pdu_data, mib)
-        when GetBulkRequest_PDU_TAG
+        when BER::GetBulkRequest_PDU_TAG
           raise InvalidPduTag, "get-bulk not valid for #{version.to_s}" if version != :SNMPv2c
           pdu = PDU.decode(GetBulkRequest, pdu_data, mib)
-        when InformRequest_PDU_TAG
+        when BER::InformRequest_PDU_TAG
           raise InvalidPduTag, "inform not valid for #{version.to_s}" if version != :SNMPv2c
           pdu = PDU.decode(InformRequest, pdu_data, mib)
-        when SNMPv2_Trap_PDU_TAG
+        when BER::SNMPv2_Trap_PDU_TAG
           raise InvalidPduTag, "SNMPv2c-trap not valid for #{version.to_s}" if version != :SNMPv2c
           pdu = PDU.decode(SNMPv2_Trap, pdu_data, mib)
         else
@@ -109,9 +110,9 @@ module SNMP
 
     def encode_version(version)
       if version == :SNMPv1
-        encode_integer(SNMP_V1)
+        encode_integer(BER::SNMP_V1)
       elsif version == :SNMPv2c
-        encode_integer(SNMP_V2C)
+        encode_integer(BER::SNMP_V2C)
       else
         raise UnsupportedVersion, version.to_s
       end
@@ -126,6 +127,9 @@ module SNMP
   end
 
   class PDU
+    include SNMP::BER::Encode
+    extend SNMP::BER::Decode
+
     attr_accessor :request_id
     attr_accessor :error_index
     attr_accessor :varbind_list
@@ -202,19 +206,19 @@ module SNMP
 
   class GetRequest < PDU
     def encode
-      encode_pdu(GetRequest_PDU_TAG)
+      encode_pdu(BER::GetRequest_PDU_TAG)
     end
   end
 
   class GetNextRequest < PDU
     def encode
-      encode_pdu(GetNextRequest_PDU_TAG)
+      encode_pdu(BER::GetNextRequest_PDU_TAG)
     end
   end
 
   class SetRequest < PDU
     def encode
-      encode_pdu(SetRequest_PDU_TAG)
+      encode_pdu(BER::SetRequest_PDU_TAG)
     end
   end
 
@@ -223,7 +227,7 @@ module SNMP
     alias max_repetitions= error_index=
 
     def encode
-      encode_pdu(GetBulkRequest_PDU_TAG)
+      encode_pdu(BER::GetBulkRequest_PDU_TAG)
     end
 
     def non_repeaters=(number)
@@ -244,7 +248,7 @@ module SNMP
     end
 
     def encode
-      encode_pdu(Response_PDU_TAG)
+      encode_pdu(BER::Response_PDU_TAG)
     end
   end
 
@@ -257,7 +261,7 @@ module SNMP
   #
   class SNMPv2_Trap < PDU
     def encode
-      encode_pdu(SNMPv2_Trap_PDU_TAG)
+      encode_pdu(BER::SNMPv2_Trap_PDU_TAG)
     end
 
     ##
@@ -301,7 +305,7 @@ module SNMP
   #
   class InformRequest < SNMPv2_Trap
     def encode
-      encode_pdu(InformRequest_PDU_TAG)
+      encode_pdu(BER::InformRequest_PDU_TAG)
     end
   end
 
@@ -309,6 +313,9 @@ module SNMP
   # The PDU class for traps in SNMPv1.
   #
   class SNMPv1_Trap
+    include SNMP::BER::Encode
+    extend SNMP::BER::Decode
+
     ##
     # Returns the source IP address for the trap, usually derived from the
     # source IP address of the packet that delivered the trap.
@@ -383,7 +390,7 @@ module SNMP
         encode_integer(@specific_trap) <<
         @timestamp.encode <<
         @varbind_list.encode
-      encode_tlv(SNMPv1_Trap_PDU_TAG, pdu_data)
+      encode_tlv(BER::SNMPv1_Trap_PDU_TAG, pdu_data)
     end
 
     def each_varbind(&block)
