@@ -27,7 +27,7 @@ examples below for more details.
 
 == Installation
 
-You can use RubyGems [http://rubygems.org/] to
+You can use RubyGems[http://rubygems.org/] to
 install the latest version of the SNMP library.
 
   gem install snmp
