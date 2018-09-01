@@ -94,9 +94,9 @@ class TestProtocol < Minitest::Test
   end
 
   def test_get_bulk_create
-    request = SNMP::GetBulkRequest.new(1234, VarBindList.new("1.3.6.2"), 0, 10)
+    request = SNMP::GetBulkRequest.new(1234, VarBindList.new("1.3.6.2"), 20, 10)
     assert_equal(1234, request.request_id)
-    assert_equal(0, request.non_repeaters)
+    assert_equal(20, request.non_repeaters)
     assert_equal(10, request.max_repetitions)
     assert_equal(1, request.varbind_list.length)
     assert_equal("1.3.6.2", request.varbind_list.first.name.to_s)

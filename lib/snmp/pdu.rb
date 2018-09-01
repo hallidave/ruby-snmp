@@ -226,6 +226,13 @@ module SNMP
     alias max_repetitions error_index
     alias max_repetitions= error_index=
 
+    def initialize(request_id, varbind_list, non_repeaters, max_repetitions)
+      super(request_id, varbind_list)
+      # Reuse attributes of superclass - same encoding
+      @error_status = non_repeaters
+      @error_index = max_repetitions
+    end
+
     def encode
       encode_pdu(BER::GetBulkRequest_PDU_TAG)
     end
