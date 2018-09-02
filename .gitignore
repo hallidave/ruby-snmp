@@ -5,6 +5,5 @@ pkg
 *.iml
 *.iws
 .rakeTasks
-Gemfile
 Gemfile.lock
 .ruby-version
