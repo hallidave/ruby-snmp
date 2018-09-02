@@ -1,4 +1,5 @@
 # encoding: ascii-8bit
+# frozen_string_literal: true
 
 require 'minitest/autorun'
 require 'snmp/varbind'
@@ -39,7 +40,7 @@ class ASN1_Test < Minitest::Test
 
   # Decode TLV data with long-format length field
   def test_decode_tlv_long
-    long_data = ""; 128.times { |i| long_data << i.chr }
+    long_data = "".dup; 128.times { |i| long_data << i.chr }
     tag, value, data = decode_tlv("\001\201\200" + long_data)
     assert_equal(1, tag)
     assert_equal(long_data, value)
@@ -48,7 +49,7 @@ class ASN1_Test < Minitest::Test
 
   # Long format with extra bytes - use four bytes for length
   def test_decode_tlv_long_extra
-    long_data = ""; 129.times { |i| long_data << i.chr }
+    long_data = "".dup; 129.times { |i| long_data << i.chr }
     tag, value, data = decode_tlv("\001\204\000\000\000\201" + long_data + "\123\123\123")
     assert_equal(1, tag)
     assert_equal(long_data, value)
@@ -227,12 +228,12 @@ class ASN1_Test < Minitest::Test
   end
 
   def test_encode_object_id
-    assert_equal("\006\001" << 80.chr, encode_object_id([2]))
+    assert_equal("\006\001".dup << 80.chr, encode_object_id([2]))
     assert_equal("\006\001\000", encode_object_id([0,0]))
     assert_equal("\006\001+", encode_object_id([1,3]))
     assert_equal("\006\002+\006", encode_object_id([1,3,6]))
     assert_equal("\006\003+\202\001", encode_object_id([1,3,257]))
-    assert_equal("\006\003" << 82.chr << "\202\001", encode_object_id([2,2,257]))
+    assert_equal("\006\003".dup << 82.chr << "\202\001", encode_object_id([2,2,257]))
     assert_raises(BER::InvalidObjectId) { encode_object_id([3,2,257]) }
     assert_raises(BER::InvalidObjectId) { encode_object_id([]) }
 

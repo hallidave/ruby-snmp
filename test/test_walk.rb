@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'snmp'
 require 'minitest/autorun'
 require 'yaml'

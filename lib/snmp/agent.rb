@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 #
 # Copyright (c) 2004-2014 David R. Halliday
 #

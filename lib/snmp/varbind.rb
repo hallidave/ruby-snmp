@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 #
 # Copyright (c) 2004-2014 David R. Halliday
 #
@@ -63,7 +64,7 @@ module SNMP
     end
 
     def encode
-      varbind_data = ""
+      varbind_data = "".dup
       self.each do |varbind|
         varbind_data << varbind.encode
       end
@@ -343,7 +344,7 @@ module SNMP
         if parts.length != 4
           raise InvalidIpAddress, "Expected four octets separated by dots, not #{ip_string.inspect}"
         end
-        value_data = ""
+        value_data = "".dup
         parts.each do |s|
           octet = s.to_i
           raise InvalidIpAddress, "Octets cannot be greater than 255: #{ip_string.inspect}" if octet > 255

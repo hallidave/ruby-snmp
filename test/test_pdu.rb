@@ -1,4 +1,5 @@
 # encoding: ascii-8bit
+# frozen_string_literal: true
 
 require 'snmp/pdu'
 require 'minitest/autorun'

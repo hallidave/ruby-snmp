@@ -1,4 +1,5 @@
 # encoding: ascii-8bit
+# frozen_string_literal: true
 #
 # Copyright (c) 2004-2014 David R. Halliday
 #
@@ -265,9 +266,9 @@ module SNMP
         else
           data = integer_to_octets(value)
           if value > 0 && data[0].ord > 0x7f
-            data = "\000" << data
+            data = "\000".dup << data
           elsif value < 0 && data[0].ord < 0x80
-            data = "\377" << data
+            data = "\377".dup << data
           end
         end
         encode_tlv(tag, data)
@@ -333,7 +334,7 @@ module SNMP
       def encode_object_id(value)
         raise InvalidObjectId, value.to_s if value.length < 1
         raise InvalidObjectId, value.to_s if value[0] > 2
-        data = ""
+        data = "".dup
         if (value.length > 1)
           raise InvalidObjectId if value[0] < 2 && value[1] > 40
           data << (40 * value[0] + value[1]).chr
