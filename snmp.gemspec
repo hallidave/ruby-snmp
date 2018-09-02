@@ -28,6 +28,7 @@ Gem::Specification.new do |s|
     s.license = 'MIT'
     s.required_ruby_version = '>= 1.9.0'
 
+    s.add_development_dependency("rake")
     s.add_development_dependency("bundler")
     s.add_development_dependency("minitest")
     s.add_development_dependency("rdoc")
