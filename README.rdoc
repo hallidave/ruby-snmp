@@ -128,9 +128,11 @@ Log traps to STDOUT.
 
 == Changes
 
-Changes for version 1.3.0:
+Changes for version 1.3.1:
 * Cleaned up deprecation warnings
 * Fixed SNMP::Integer#<=> method for Ruby 2.3.0 and later
+* Removed artificial limit on number of non-repeaters for GetBulkRequest
+* SNMP::BER module no longer pollutes global namespace
 
 Changes for version 1.2.0:
 * Removed support for Ruby 1.8
