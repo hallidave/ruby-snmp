@@ -180,8 +180,8 @@ module SNMP
     def error_status=(status)
       @error_status = ERROR_STATUS_CODE[status]
       unless @error_status
-        if status.respond_to?(:to_int) && ERROR_STATUS_NAME[status.to_int]
-          @error_status = status
+        if status.respond_to?(:to_int)
+          @error_status = status.to_int
         else
           raise InvalidErrorStatus, status.to_s
         end
@@ -189,7 +189,7 @@ module SNMP
     end
 
     def error_status
-      ERROR_STATUS_NAME[@error_status]
+      ERROR_STATUS_NAME[@error_status] || @error_status
     end
 
     def encode_pdu(pdu_tag)

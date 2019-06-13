@@ -118,7 +118,12 @@ class TestProtocol < Minitest::Test
     request.error_status = 2
     assert_equal(:noSuchName, request.error_status)
 
-    assert_raises(InvalidErrorStatus) {request.error_status = 42}
+    request.error_status = 42
+    assert_equal(42, request.error_status)
+
+    assert_raises(InvalidErrorStatus) {request.error_status = "myErrorString"}
+    
+    assert_raises(InvalidErrorStatus) {request.error_status = :myErrorSymbol}
   end
 
   def test_snmpv2_trap
@@ -185,4 +190,12 @@ class TestProtocol < Minitest::Test
     assert_equal(0, pdu.varbind_list.length)
   end
 
+  def test_response_pdu_unknown_error
+    pdu = Response.new(2147483647, VarBindList.new, 6883501, 0)
+    assert_equal("\xA2\x10\x02\x04\x7F\xFF\xFF\xFF\x02\x03\x69\x08\xAD\x02\x01\x00\x30\x00", pdu.encode)
+
+    encoded = Message.new(:SNMPv2c, "public", pdu).encode
+    pdu = Message.decode(encoded).pdu
+    assert_equal(6883501, pdu.error_status)
+  end
 end
