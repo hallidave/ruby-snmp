@@ -164,6 +164,7 @@ module SNMP
       end
       @by_name.merge!(oid_hash) do |key, old, value|
         warn "warning: overwriting old MIB name '#{key}'"
+        value
       end
       @by_module_by_name[module_name] = {}
       @by_module_by_name[module_name].merge!(oid_hash)
