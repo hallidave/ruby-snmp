@@ -205,7 +205,8 @@ module SNMP
       @transport = config.create_transport
       @max_bytes = config.max_recv_bytes
       @mib = MIB.new
-      load_modules(config.mib_modules, config.mib_dir)
+      @mib_dir = config.mib_dir
+      load_modules(config.mib_modules, @mib_dir)
       @ignore_oid_order = config.ignore_oid_order
       @config = config.applied_config
     end
@@ -231,10 +232,6 @@ module SNMP
     #
     def close
       @transport.close
-    end
-
-    def load_module(name)
-      @mib.load_module(name)
     end
 
     ##
@@ -490,8 +487,12 @@ module SNMP
       @@request_id.force_next(request_id)
     end
 
-    def load_modules(module_list, mib_dir)
-      module_list.each { |m| @mib.load_module(m, mib_dir) }
+    def load_module(name, mib_dir = @mib_dir)
+      @mib.load_module(name, mib_dir)
+    end
+
+    def load_modules(module_list, mib_dir = @mib_dir)
+      module_list.each { |m| load_module(m, mib_dir) }
     end
 
     private
@@ -623,7 +624,8 @@ module SNMP
       @community = config.community
       @max_bytes = config.max_recv_bytes
       @mib = MIB.new
-      load_modules(config.mib_modules, config.mib_dir)
+      @mib_dir = config.mib_dir
+      load_modules(config.mib_modules, @mib_dir)
       @config = config.applied_config
 
       @handler_init = block
@@ -697,11 +699,15 @@ module SNMP
     alias kill exit
     alias terminate exit
 
-    private
-
-    def load_modules(module_list, mib_dir)
-      module_list.each { |m| @mib.load_module(m, mib_dir) }
+    def load_module(name, mib_dir = @mib_dir)
+      @mib.load_module(name, mib_dir)
     end
+
+    def load_modules(module_list, mib_dir = @mib_dir)
+      module_list.each { |m| load_module(m, mib_dir) }
+    end
+
+    private
 
     def process_traps(trap_listener)
       @handler_init.call(trap_listener) if @handler_init
