@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 $:.unshift File.expand_path("../lib", __FILE__)
 
-require 'rake'
-require 'snmp/version'
+require_relative 'lib/snmp/version'
 
-PKG_FILES = FileList[
+PKG_FILES = [
     'Rakefile',
     'README.rdoc',
     'MIT-LICENSE',
