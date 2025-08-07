@@ -1,6 +1,5 @@
 /.bundle/
 /doc/
-web/site
 /pkg/
 /tmp/
 *.ipr
