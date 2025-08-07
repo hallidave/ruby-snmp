@@ -5,8 +5,6 @@
 
 == Summary
 
-THIS LIBRARY IS NO LONGER SUPPORTED. USE AT YOUR OWN RISK.
-
 This library implements SNMP (the Simple Network Management Protocol).  It is
 implemented in pure Ruby, so there are no dependencies on external libraries
 like net-snmp[http://www.net-snmp.org/].  You can run this library anywhere
