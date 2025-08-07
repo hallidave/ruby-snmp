@@ -1,35 +1,20 @@
-require 'rake'
-require 'rake/testtask'
-require 'rake/clean'
+# frozen_string_literal: true
 
-require 'rdoc/task'
-require 'rubygems/package_task'
+require "bundler/gem_tasks"
+require "minitest/test_task"
 
-task :default => [:test]
+Minitest::TestTask.create
 
-# test target
-Rake::TestTask.new do |test|
-    test.libs  << "lib"
-end
-
-# package target
-CLEAN.include 'pkg'
-CLEAN.include 'doc'
-CLEAN.include 'web/site'
-
-spec = Gem::Specification.load "snmp.gemspec"
-
-Gem::PackageTask.new(spec) do |package|
-    package.need_zip = false
-    package.need_tar = false
-end
+task default: :test
 
 # rdoc, clobber_rdoc, rerdoc targets
+require 'rdoc/task'
+
 Rake::RDocTask.new do |doc|
-    doc.rdoc_dir = "doc"
-    doc.main = "README.rdoc"
-    doc.rdoc_files.include('README.rdoc', 'lib/**/*.rb')
-    doc.title = "SNMP Library for Ruby"
+  doc.rdoc_dir = "doc"
+  doc.main = "README.md"
+  doc.rdoc_files.include("README.md", "lib/**/*.rb")
+  doc.title = "SNMP Library for Ruby"
 end 
 
 namespace :web do
