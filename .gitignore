@@ -1,9 +1,12 @@
-doc
+/.bundle/
+/doc/
 web/site
-pkg
+/pkg/
+/tmp/
 *.ipr
 *.iml
 *.iws
 .rakeTasks
-Gemfile.lock
+
+/Gemfile.lock
 .ruby-version
