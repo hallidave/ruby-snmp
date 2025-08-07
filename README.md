@@ -1,12 +1,12 @@
-= SNMP Library for Ruby
-{<img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License MIT" />}[https://raw.githubusercontent.com/ruby-snmp/ruby-snmp/master/MIT-LICENSE]
-{<img src="https://badge.fury.io/rb/snmp.svg" alt="Gem Version" />}[https://badge.fury.io/rb/snmp]
+# SNMP Library for Ruby
+[<img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License MIT" />](https://raw.githubusercontent.com/ruby-snmp/ruby-snmp/master/MIT-LICENSE)
+[<img src="https://badge.fury.io/rb/snmp.svg" alt="Gem Version" />](https://badge.fury.io/rb/snmp)
 
-== Summary
+## Summary
 
 This library implements SNMP (the Simple Network Management Protocol).  It is
 implemented in pure Ruby, so there are no dependencies on external libraries
-like net-snmp[http://www.net-snmp.org/].  You can run this library anywhere
+like [net-snmp](http://www.net-snmp.org/).  You can run this library anywhere
 that Ruby can run.
 
 This release supports the following:
@@ -16,116 +16,129 @@ This release supports the following:
 * All of the ASN.1 data types defined by SNMPv1 and SNMPv2c
 * Sending informs and v1 and v2 traps
 * Trap handling for informs and v1 and v2 traps
-* Symbolic OID values (ie. "ifTable" instead of "1.3.6.1.2.1.2.2") as   
-  parameters to the SNMP::Manager API
+* Symbolic OID values (ie. "ifTable" instead of "1.3.6.1.2.1.2.2") as parameters to the SNMP::Manager API
 * Includes symbol data files for all current IETF MIBs
 * Compatible with Ruby 1.9 and higher
 
 See the SNMP::Manager, SNMP::TrapListener, and SNMP::MIB classes and the
 examples below for more details.
 
-== Installation
+## Installation
 
-You can use RubyGems[http://rubygems.org/] to
+You can use [RubyGems](https://rubygems.org/) to
 install the latest version of the SNMP library.
 
-  gem install snmp
+```sh
+gem install snmp
+```
 
-== Examples
+## Examples
 
-=== Get Request
+### Get Request
 
 Retrieve a system description.
 
-  require 'snmp'
-  
-  SNMP::Manager.open(:host => 'localhost') do |manager|
-      response = manager.get(["sysDescr.0", "sysName.0"])
-      response.each_varbind do |vb|
-          puts "#{vb.name.to_s}  #{vb.value.to_s}  #{vb.value.asn1_type}"
-      end
-  end
+```ruby
+require 'snmp'
 
-=== Set Request
+SNMP::Manager.open(:host => 'localhost') do |manager|
+  response = manager.get(["sysDescr.0", "sysName.0"])
+  response.each_varbind do |vb|
+    puts "#{vb.name.to_s}  #{vb.value.to_s}  #{vb.value.asn1_type}"
+  end
+end
+```
+
+### Set Request
 
 Create a varbind for setting the system name.
 
-  require 'snmp'
-  include SNMP
+```ruby
+require 'snmp'
+include SNMP
 
-  manager = Manager.new(:host => 'localhost')
-  varbind = VarBind.new("1.3.6.1.2.1.1.5.0", OctetString.new("My System Name"))
-  manager.set(varbind)
-  manager.close
+manager = Manager.new(:host => 'localhost')
+varbind = VarBind.new("1.3.6.1.2.1.1.5.0", OctetString.new("My System Name"))
+manager.set(varbind)
+manager.close
+```
 
-=== Table Walk
+### Table Walk
 
 Walk the ifTable.
 
-  require 'snmp'
+```ruby
+require 'snmp'
 
-  ifTable_columns = ["ifIndex", "ifDescr", "ifInOctets", "ifOutOctets"]
-  SNMP::Manager.open(:host => 'localhost') do |manager|
-      manager.walk(ifTable_columns) do |row|
-          row.each { |vb| print "\t#{vb.value}" }
-          puts
-      end
+ifTable_columns = ["ifIndex", "ifDescr", "ifInOctets", "ifOutOctets"]
+SNMP::Manager.open(:host => 'localhost') do |manager|
+  manager.walk(ifTable_columns) do |row|
+    row.each { |vb| print "\t#{vb.value}" }
+    puts
   end
+end
+```
 
-=== Get-Next Request
+### Get-Next Request
 
 A more difficult way to walk the ifTable.
  
-  require 'snmp'
-  include SNMP
+```ruby
+require 'snmp'
+include SNMP
 
-  Manager.open(:host => 'localhost') do |manager|
-      ifTable = ObjectId.new("1.3.6.1.2.1.2.2")
-      next_oid = ifTable
-      while next_oid.subtree_of?(ifTable)
-          response = manager.get_next(next_oid)
-          varbind = response.varbind_list.first
-          next_oid = varbind.name
-          puts varbind.to_s
-      end
+Manager.open(:host => 'localhost') do |manager|
+  ifTable = ObjectId.new("1.3.6.1.2.1.2.2")
+  next_oid = ifTable
+  while next_oid.subtree_of?(ifTable)
+    response = manager.get_next(next_oid)
+    varbind = response.varbind_list.first
+    next_oid = varbind.name
+    puts varbind.to_s
   end
+end
+```
 
-=== Get-Bulk Request
+### Get-Bulk Request
 
 Get interface description and admin status for 10 rows of the ifTable.
 
-  require 'snmp'
-  include SNMP
+```ruby
+require 'snmp'
+include SNMP
 
-  ifDescr_OID = ObjectId.new("1.3.6.1.2.1.2.2.1.2")
+ifDescr_OID = ObjectId.new("1.3.6.1.2.1.2.2.1.2")
   ifAdminStatus_OID = ObjectId.new("1.3.6.1.2.1.2.2.1.7")
   MAX_ROWS = 10
   Manager.open(:host => 'localhost') do |manager|
-      response = manager.get_bulk(0, MAX_ROWS, [ifDescr_OID, ifAdminStatus_OID])
-      list = response.varbind_list
-      until list.empty?
-          ifDescr = list.shift
-          ifAdminStatus = list.shift
-          puts "#{ifDescr.value}    #{ifAdminStatus.value}"
-      end
+  response = manager.get_bulk(0, MAX_ROWS, [ifDescr_OID, ifAdminStatus_OID])
+  list = response.varbind_list
+  until list.empty?
+    ifDescr = list.shift
+    ifAdminStatus = list.shift
+    puts "#{ifDescr.value}    #{ifAdminStatus.value}"
   end
+end
+```
 
-=== Trap Handling
+### Trap Handling
 
 Log traps to STDOUT.
 
-  require 'snmp'
-  require 'logger'
+```ruby
+require 'snmp'
+require 'logger'
 
-  log = Logger.new(STDOUT)
-  m = SNMP::TrapListener.new do |manager|
-      manager.on_trap_default do |trap|
-          log.info trap.inspect
-      end
+log = Logger.new(STDOUT)
+m = SNMP::TrapListener.new do |manager|
+  manager.on_trap_default do |trap|
+    log.info trap.inspect
   end
-  m.join
+end
+m.join
+```
 
-== Changes
+## Changes
 
 Changes for version 1.3.2:
 * Accept non-standard error status codes
@@ -180,7 +193,7 @@ Changes for version 1.0.0:
   instead of just a number.  The to_i method can still be used to get the
   number of ticks.
 
-== License
+## License
 
 This SNMP Library is released under the MIT License.
 
