@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
 require "bundler/gem_tasks"
-require "minitest/test_task"
 
-Minitest::TestTask.create
+# Avoid using `minitest/test_task` for Ruby 2.5 and earlier
+require "rake/testtask"
+
+Rake::TestTask.new(:test) do |test|
+  test.libs << "lib"
+end
 
 task default: :test
 
