@@ -1,36 +1,42 @@
 # frozen_string_literal: true
-$:.unshift File.expand_path("../lib", __FILE__)
 
 require_relative 'lib/snmp/version'
 
-PKG_FILES = [
-    'Rakefile',
-    'README.rdoc',
-    'MIT-LICENSE',
-    'lib/**/*.rb',
-    'test/**/test*.rb',
-    'test/**/*.yaml',
-    'examples/*.rb',
-    'data/**/*.yaml']
+Gem::Specification.new do |spec|
+  spec.name = "snmp"
+  spec.version = SNMP::VERSION
+  spec.authors = ["Dave Halliday"]
+  spec.email = ["hallidave@gmail.com"]
 
-Gem::Specification.new do |s|
-    s.platform = Gem::Platform::RUBY
-    s.summary = "A Ruby implementation of SNMP (the Simple Network Management Protocol)."
-    s.name = 'snmp'
-    s.version = SNMP::VERSION
-    s.files = PKG_FILES.to_a
-    s.extra_rdoc_files = ['README.rdoc']
-    s.rdoc_options << '--main' << 'README.rdoc' <<
-                      '--title' << 'SNMP Library for Ruby'
-    s.description = "A Ruby implementation of SNMP (the Simple Network Management Protocol)."
-    s.author = 'Dave Halliday'
-    s.email = 'hallidave@gmail.com'
-    s.homepage = 'https://github.com/ruby-snmp/ruby-snmp'
-    s.license = 'MIT'
-    s.required_ruby_version = '>= 1.9.0'
+  spec.summary = "A Ruby implementation of SNMP (the Simple Network Management Protocol)."
+  spec.description = "A Ruby implementation of SNMP (the Simple Network Management Protocol)."
+  spec.homepage = "https://github.com/ruby-snmp/ruby-snmp"
+  spec.license = "MIT"
+  spec.required_ruby_version = ">= 1.9.0"
 
-    s.add_development_dependency("rake")
-    s.add_development_dependency("bundler")
-    s.add_development_dependency("minitest")
-    s.add_development_dependency("rdoc")
+  spec.metadata["homepage_uri"] = spec.homepage
+  spec.metadata["source_code_uri"] = "https://github.com/ruby-snmp/ruby-snmp"
+  spec.metadata["changelog_uri"] = "https://github.com/ruby-snmp/ruby-snmp/CHANGELOG.md"
+
+  # Specify which files should be added to the gem when it is released.
+  # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
+  gemspec = File.basename(__FILE__)
+  spec.files = IO.popen(%w[git ls-files -z], chdir: __dir__, err: IO::NULL) do |ls|
+    ls.readlines("\x0", chomp: true).reject do |f|
+      (f == gemspec) ||
+        f.start_with?(*%w[bin/ test/ spec/ features/ .git .github appveyor Gemfile interop web ext])
+    end
+  end
+  spec.bindir = "exe"
+  spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
+  spec.require_paths = ["lib"]
+
+  spec.extra_rdoc_files = ["README.md"]
+  spec.rdoc_options << "--main" << "README.md" <<
+    "--title" << "SNMP Library for Ruby"
+
+  spec.add_development_dependency("rake")
+  spec.add_development_dependency("bundler")
+  spec.add_development_dependency("minitest")
+  spec.add_development_dependency("rdoc")
 end
