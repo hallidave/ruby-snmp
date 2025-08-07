@@ -34,9 +34,4 @@ Gem::Specification.new do |spec|
   spec.extra_rdoc_files = ["README.md"]
   spec.rdoc_options << "--main" << "README.md" <<
     "--title" << "SNMP Library for Ruby"
-
-  spec.add_development_dependency("rake")
-  spec.add_development_dependency("bundler")
-  spec.add_development_dependency("minitest")
-  spec.add_development_dependency("rdoc")
 end
